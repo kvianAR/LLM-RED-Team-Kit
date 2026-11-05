@@ -1,0 +1,23 @@
+target_id: local_demo
+endpoint: http://127.0.0.1:8765/vulnerable/chat
+policy_file: policy.yaml
+corpus_dir: ../../corpus/scenarios
+principal: user_alpha
+auth_token_env: LLMRT_DEMO_TOKEN
+profile: deterministic
+trusted_fixture_url: http://127.0.0.1:8765/manifest
+fixture_verified_by_operator: true
+trace_verified_by_operator: true
+capabilities:
+- chat
+- tool_trace
+- fixtures
+- documents
+- session
+allowed_hosts:
+- 127.0.0.1
+allowed_ports:
+- 8765
+allow_private: true
+include_scenario_fields: true
+max_requests: 150

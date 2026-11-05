@@ -163,7 +163,12 @@ class HTTPAdapter:
                 async with asyncio.timeout(timeout):
                     async with self.budget.reserve(model_request=method == "POST") as dispatch:
                         status, headers, body = await self._exchange(method, url, payload, dispatch)
-                if status != 429 or attempt == self.config.retries:
+                if (
+                    status != 429
+                    or attempt == self.config.retries
+                    or method != "GET"
+                    and not self.config.idempotency_supported
+                ):
                     break
                 # A rejected 429 request may retry. Ambiguous writes never retry automatically.
                 import random
@@ -194,7 +199,10 @@ class HTTPAdapter:
                 raise TransportError(f"HTTP status {status}")
             if headers.get("content-encoding", "identity").lower() == "gzip":
                 decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
-                body = decoder.decompress(body, self.config.max_response_bytes + 1)
+                try:
+                    body = decoder.decompress(body, self.config.max_response_bytes + 1)
+                except zlib.error:
+                    raise TransportError("Invalid gzip response") from None
                 if (
                     len(body) > self.config.max_response_bytes
                     or not decoder.eof
@@ -247,6 +255,10 @@ class HTTPAdapter:
                 if any(ord(char) < 32 for char in credential):
                     raise TransportError("Invalid credential characters")
                 headers.append(f"Authorization: Bearer {credential}")
+            if method == "POST" and self.config.idempotency_supported:
+                import hashlib
+
+                headers.append("Idempotency-Key: " + hashlib.sha256(body).hexdigest())
             dispatch()
             writer.write(("\r\n".join(headers) + "\r\n\r\n").encode("ascii") + body)
             await writer.drain()

@@ -76,6 +76,16 @@ def parser():
     retest.add_argument("--finding", required=True)
     retest.add_argument("--output", type=Path, default=Path("scan-results"))
     retest.add_argument("--fail-on", choices=["none", "confirmed", "high", "any"], default="none")
+    evaluation = commands.add_parser(
+        "evaluate", help="Run labeled suites and report explicit denominators"
+    )
+    evaluation.add_argument("--suite", type=Path, required=True)
+    evaluation.add_argument("--config", type=Path, required=True)
+    evaluation.add_argument("--protected-config", type=Path, required=True)
+    evaluation.add_argument("--output", type=Path, default=Path("scan-results/evaluation"))
+    evaluation.add_argument("--runs", type=int, default=1)
+    splits = commands.add_parser("check-splits", help="Reject overlapping related dataset groups")
+    splits.add_argument("suites", nargs="+", type=Path)
     return root
 
 
@@ -96,6 +106,44 @@ def main(argv=None):
                 f"Skill installed at {install_skill(args.destination, args.client)}. Created by @kvianAR"
             )
             return 0
+        if args.command == "check-splits":
+            from llmrt.evaluation import check_splits
+
+            print(json.dumps(check_splits(args.suites), indent=2))
+            return 0
+        if args.command == "evaluate":
+            import os
+            import uuid
+
+            from llmrt.evaluation import evaluate
+
+            metrics = asyncio.run(
+                evaluate(
+                    args.suite,
+                    {"vulnerable": args.config, "protected": args.protected_config},
+                    args.output,
+                    args.runs,
+                )
+            )
+            path = args.output / ("evaluation-" + uuid.uuid4().hex + ".json")
+            descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+            with os.fdopen(descriptor, "w") as stream:
+                json.dump(metrics, stream, indent=2)
+            print(
+                json.dumps(
+                    {
+                        "suite": metrics["suite_id"],
+                        "cases": metrics["unique_cases"],
+                        "runs": metrics["runs"],
+                        "per_run": metrics["per_run"],
+                        "report": str(path),
+                        "creator": "kvianAR",
+                    },
+                    indent=2,
+                )
+            )
+            incomplete = any(r["metrics"]["execution_coverage"] != 1.0 for r in metrics["per_run"])
+            return 3 if incomplete else 0
         if args.command == "diff":
             print(
                 json.dumps(

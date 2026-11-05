@@ -14,13 +14,13 @@ async def test_end_to_end_pairs_and_canonical_reports(demo, tmp_path):
     root, lab, _ = demo
     vulnerable, directory = await run_scan(root / "vulnerable.yaml", tmp_path / "runs")
     protected, protected_dir = await run_scan(root / "protected.yaml", tmp_path / "runs")
-    assert sum(a.verdict == Verdict.CONFIRMED for a in vulnerable.assessments) == 5
+    assert sum(a.verdict == Verdict.CONFIRMED for a in vulnerable.assessments) == 24
     assert all(a.verdict == Verdict.CLEAN for a in protected.assessments)
     assert exit_code(vulnerable, "high") == 1
     assert exit_code(vulnerable) == 0
     assert exit_code(protected, "high") == 0
     assert vulnerable.provenance["budget_reservations_remaining"] == 0
-    assert len(verify_evidence(directory)) == 6
+    assert len(verify_evidence(directory)) == 48
     saved = json.loads((directory / "report.json").read_text())
     sarif = json.loads((directory / "report.sarif").read_text())
     assert saved["run_id"] == sarif["runs"][0]["properties"]["runId"]
@@ -60,8 +60,8 @@ async def test_timeout_does_not_cancel_siblings(demo, tmp_path, monkeypatch):
 
     monkeypatch.setattr(HTTPAdapter, "request", fail_one)
     result, _ = await run_scan(root / "protected.yaml", tmp_path / "runs")
-    assert sum(a.execution_status == ExecutionStatus.TIMEOUT for a in result.assessments) == 1
-    assert sum(a.execution_status == ExecutionStatus.COMPLETED for a in result.assessments) == 5
+    assert sum(a.execution_status == ExecutionStatus.TIMEOUT for a in result.assessments) == 8
+    assert sum(a.execution_status == ExecutionStatus.COMPLETED for a in result.assessments) == 40
     assert exit_code(result) == 3
 
 

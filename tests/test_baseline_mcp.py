@@ -17,7 +17,7 @@ async def test_baseline_and_review(demo, tmp_path):
     before, _ = await run_scan(root / "vulnerable.yaml", tmp_path / "runs")
     after, _ = await run_scan(root / "protected.yaml", tmp_path / "runs")
     comparisons = compare_scans(before, after)["comparisons"]
-    assert sum(c["classification"] == "not_reproduced" for c in comparisons) == 5
+    assert sum(c["classification"] == "not_reproduced" for c in comparisons) == 24
     modified = after.model_copy(
         update={"provenance": {**after.provenance, "model_id": "changed-model"}}
     )

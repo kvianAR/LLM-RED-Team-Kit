@@ -79,7 +79,8 @@ def sarif_report(result):
         }
         if effective_verdict(result, assessment) != Verdict.CONFIRMED:
             continue
-        level = "error" if assessment.severity in ("high", "critical") else "warning"
+        severity = effective_severity(result, assessment)
+        level = "error" if severity in ("high", "critical") else "warning"
         findings.append(
             {
                 "ruleId": assessment.scenario_id,
@@ -88,7 +89,7 @@ def sarif_report(result):
                 "partialFingerprints": {"llmrt/v1": assessment.fingerprint},
                 "properties": {
                     "assessmentId": assessment.id,
-                    "severity": assessment.severity,
+                    "severity": severity,
                     "evidenceDigests": assessment.evidence,
                     "verdict": "confirmed_violation",
                 },
@@ -130,7 +131,7 @@ def terminal_report(result):
     for assessment in result.assessments:
         lines.append(
             f"{assessment.scenario_id}  {assessment.execution_status}  "
-            f"{effective_verdict(result, assessment)}  {assessment.severity or '-'}"
+            f"{effective_verdict(result, assessment)}  {effective_severity(result, assessment) or '-'}"
         )
     if result.reason:
         lines.append(result.reason)

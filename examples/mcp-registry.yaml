@@ -1,0 +1,4 @@
+targets:
+  vulnerable: demo/vulnerable.yaml
+  protected: demo/protected.yaml
+output_root: ../scan-results

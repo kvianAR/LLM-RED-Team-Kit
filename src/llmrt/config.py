@@ -78,6 +78,7 @@ class TargetConfig(Model):
     max_response_bytes: int = Field(default=1048576, ge=1024, le=16777216)
     max_redirects: int = Field(default=3, ge=0, le=10)
     retries: int = Field(default=1, ge=0, le=5)
+    idempotency_supported: bool = False
     max_requests: int = Field(default=100, ge=1, le=100000)
     max_model_calls: int | None = Field(default=None, ge=1)
     max_tokens: int | None = Field(default=None, ge=1)

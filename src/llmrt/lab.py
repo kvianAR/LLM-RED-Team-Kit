@@ -97,7 +97,11 @@ class DemoLab:
             raise ValueError("Unknown fixture resource")
         events = []
         if operation == "disclose":
-            text = "Protected context withheld." if protected else self.canaries[resource]
+            text = (
+                "Protected context withheld."
+                if protected and not self.policy.allows(principal, resource)
+                else self.canaries[resource]
+            )
             return TargetResponse(text=text, session_id=session)
         if operation == "document":
             document = request.get("document", "injected_note")
