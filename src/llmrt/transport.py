@@ -33,10 +33,16 @@ class Budget:
         self.deadline = time.monotonic() + config.max_duration_seconds
 
     @asynccontextmanager
-    async def reserve(self, model_request=False):
-        calls = (self.config.model_calls_per_request or 0) if model_request else 0
-        tokens = (self.config.tokens_per_request_upper_bound or 0) if model_request else 0
-        cost = (self.config.cost_per_request_upper_bound or 0) if model_request else 0
+    async def reserve(self, model_request=False, judge=False):
+        calls, tokens, cost = 0, 0, 0.0
+        if judge:
+            calls = 1
+            tokens = self.config.judge_tokens_per_call_upper_bound or 0
+            cost = self.config.judge_cost_per_call_upper_bound or 0
+        elif model_request:
+            calls = self.config.model_calls_per_request or 0
+            tokens = self.config.tokens_per_request_upper_bound or 0
+            cost = self.config.cost_per_request_upper_bound or 0
         async with self.lock:
             if (
                 time.monotonic() >= self.deadline

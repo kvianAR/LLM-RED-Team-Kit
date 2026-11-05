@@ -74,6 +74,7 @@ async def evaluate(suite_path, config_paths, output_root, runs=1):
         raise ValueError("Evaluation supports 1–10 repeated runs")
     suite_path = Path(suite_path)
     manifest_path = suite_path.parent / "manifest.json"
+    freeze = {}
     if manifest_path.is_file():
         freeze = json.loads(manifest_path.read_text())
         expected = freeze.get("files", {}).get(suite_path.name)
@@ -102,6 +103,9 @@ async def evaluate(suite_path, config_paths, output_root, runs=1):
                 raise ValueError("Evaluation scenario is absent from corpus")
             if suite.get("groups") and scenario.group not in suite["groups"]:
                 raise ValueError("Scenario group is absent from declared split")
+            frozen_template = freeze.get("templates", {}).get(scenario.id)
+            if frozen_template and digest(scenario) != frozen_template:
+                raise ValueError("Frozen scenario content differs from manifest")
             with tempfile.TemporaryDirectory(prefix="eval-", dir=output_root) as temporary:
                 directory = Path(temporary)
                 source_base = Path(config_paths[case["target"]]).resolve().parent

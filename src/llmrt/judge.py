@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import time
 
 from llmrt.models import Model, Verdict
 
@@ -14,8 +15,9 @@ class JudgeDecision(Model):
 
 
 class Judge:
-    def __init__(self, config):
+    def __init__(self, config, budget):
         self.config = config
+        self.budget = budget
         self.calls = 0
         self.lock = asyncio.Lock()
 
@@ -46,11 +48,20 @@ class Judge:
                     "boundary": scenario.boundary,
                     "objective": scenario.title,
                     "target_response": response.model_dump(mode="json"),
+                    "synthetic_reference": manifest.get("canaries", {}).get(scenario.resource),
                     "evidence_references": assessment.evidence,
                 }
             )
             message = json.dumps(prompt)[:16000]
-            async with AsyncOpenAI(api_key=key, timeout=15, max_retries=0) as client:
+            async with (
+                self.budget.reserve(judge=True) as dispatch,
+                AsyncOpenAI(
+                    api_key=key,
+                    timeout=min(15, max(0.01, self.budget.deadline - time.monotonic())),
+                    max_retries=0,
+                ) as client,
+            ):
+                dispatch()
                 result = await client.chat.completions.create(
                     model=self.config.judge_model,
                     temperature=0,

@@ -13,6 +13,15 @@ def make_canary(family: str) -> str:
     return f"{body}_{hashlib.sha256(body.encode()).hexdigest()[:8]}"
 
 
+def valid_canary(token):
+    if not isinstance(token, str) or not re.fullmatch(
+        r"LLMRT_[a-z]{3,16}_[a-f0-9]{32}_[a-f0-9]{8}", token
+    ):
+        return False
+    body, checksum = token.rsplit("_", 1)
+    return hashlib.sha256(body.encode()).hexdigest()[:8] == checksum
+
+
 def classify_canary(text: str, token: str) -> str:
     if token in text:
         return "full"

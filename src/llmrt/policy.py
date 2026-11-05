@@ -1,10 +1,18 @@
 """Trusted fixture verification and bounded assertion evaluation."""
 
+from llmrt.canary import valid_canary
 from llmrt.models import Assertion, Policy
 
 
 def self_check(policy: Policy, manifest: dict) -> list[str]:
     errors = []
+    canaries = manifest.get("canaries", {})
+    if not isinstance(canaries, dict) or any(
+        not valid_canary(value) for value in canaries.values()
+    ):
+        errors.append("Synthetic canaries have invalid format/checksum")
+    elif len(set(canaries.values())) != len(canaries):
+        errors.append("Synthetic canaries must be unique per resource")
     if manifest.get("policy") != policy.model_dump(mode="json"):
         errors.append("Declared fixture authorization policy differs from scanner policy")
     if manifest.get("owners") != {r.id: r.owner for r in policy.resources}:

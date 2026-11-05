@@ -10,6 +10,7 @@ from pydantic import Field, model_validator
 from yaml.events import AliasEvent, CollectionEndEvent, CollectionStartEvent
 
 from llmrt.models import LogicalID, Model, Policy, Scenario
+from llmrt.templates import render_message
 
 
 class UniqueLoader(yaml.SafeLoader):
@@ -95,6 +96,8 @@ class TargetConfig(Model):
     judge_model: str | None = None
     judge_api_key_env: str = "OPENAI_API_KEY"
     judge_max_calls: int = Field(default=5, ge=0, le=100)
+    judge_tokens_per_call_upper_bound: int | None = Field(default=None, ge=1)
+    judge_cost_per_call_upper_bound: float | None = Field(default=None, gt=0)
     redaction_patterns: list[str] = Field(default_factory=list)
 
     @model_validator(mode="before")
@@ -139,6 +142,10 @@ class TargetConfig(Model):
             raise ValueError("Token limit requires a declared upper bound per target request")
         if self.max_cost and self.cost_per_request_upper_bound is None:
             raise ValueError("Cost limit requires a declared upper bound per target request")
+        if self.judge_model and self.max_cost and self.judge_cost_per_call_upper_bound is None:
+            raise ValueError("Judge cost limit requires a declared per-call upper bound")
+        if self.judge_model and self.max_tokens and self.judge_tokens_per_call_upper_bound is None:
+            raise ValueError("Judge token limit requires a declared per-call upper bound")
         return self
 
     def credential(self) -> str:
@@ -175,4 +182,6 @@ def read_config(path: Path):
             raise ValueError("Scenario references must match policy and taxonomy")
         if not scenario.reviewed or not scenario.review_notes:
             raise ValueError("Scenario requires review provenance")
+        for message in scenario.messages:
+            render_message(message, config.principal, scenario.resource, "validation_session")
     return config, policy, scenarios

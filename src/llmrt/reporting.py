@@ -51,6 +51,11 @@ def exit_code(result, fail_on="none"):
         a.execution_status in incomplete for a in result.assessments
     ):
         return 3
+    if any(
+        a.execution_status == ExecutionStatus.COMPLETED and a.verdict == Verdict.INCONCLUSIVE
+        for a in result.assessments
+    ):
+        return 3
     applicable = [a for a in result.assessments if a.execution_status == ExecutionStatus.COMPLETED]
     if not applicable:
         return 3

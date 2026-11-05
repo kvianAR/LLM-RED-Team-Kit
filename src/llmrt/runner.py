@@ -123,7 +123,7 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
         if config.judge_model:
             from llmrt.judge import Judge
 
-            judge = Judge(config)
+            judge = Judge(config, budget)
         if not config.fixture_verified_by_operator:
             status, reason = (
                 ExecutionStatus.POLICY_UNVERIFIED,
@@ -176,6 +176,17 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                             )
                         )
                         return
+                if scenario.operation == "disclose" and not manifest.get("canaries", {}).get(
+                    scenario.resource
+                ):
+                    assessments.append(
+                        incomplete(
+                            scenario,
+                            ExecutionStatus.UNSUPPORTED,
+                            "Disclosure assessment requires a planted synthetic reference.",
+                        )
+                    )
+                    return
                 session = uuid.uuid4().hex
                 history = []
                 final = None
@@ -338,7 +349,7 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
             execution_status=status,
             reason=reason,
             requests=budget.used,
-            model_calls=budget.model_units + (judge.calls if judge else 0),
+            model_calls=budget.model_units,
             coverage=coverage,
         )
         try:
