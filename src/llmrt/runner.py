@@ -27,6 +27,7 @@ from llmrt.transport import Budget, BudgetExceeded, HTTPAdapter, TransportError
 
 def plan_scan(path, selected=None):
     config, policy, scenarios = read_config(Path(path))
+    corpus_ids = {s.id for s in scenarios}
     if selected:
         scenarios = select_scenarios(scenarios, selected)
     rows = [
@@ -45,13 +46,20 @@ def plan_scan(path, selected=None):
         for s, row in zip(scenarios, rows)
         if not row["missing_capabilities"] and row["principal_supported"]
     ]
-    base = sum(len(s.messages) for s in applicable) + bool(config.trusted_fixture_url)
+    controls = 2 if config.fixture_session_url else 0
+    base = sum(len(s.messages) + controls for s in applicable) + bool(
+        config.trusted_fixture_url and not config.fixture_file
+    )
+    judge_upper = min(config.judge_max_calls, len(applicable)) if config.judge_model else 0
     return {
         "target": config.target_id,
         "profile": config.profile,
         "scenarios": rows,
         "estimated_base_requests": base,
-        "request_upper_bound": base * (1 + config.retries) * (1 + config.max_redirects),
+        "request_upper_bound": base * (1 + config.retries) * (1 + config.max_redirects)
+        + judge_upper,
+        "not_selected": sorted(corpus_ids - {s.id for s in scenarios}),
+        "strict_coverage": config.strict_coverage,
         "request_budget": config.max_requests,
         "judge_enabled": bool(config.judge_model),
         "self_check_required": True,
@@ -91,6 +99,7 @@ def incomplete(scenario, status, reason, evidence=None):
 async def run_scan(config_path, output_root, selected=None, overrides=None):
     config_path = Path(config_path).resolve()
     config, policy, scenarios = read_config(config_path)
+    all_scenarios = list(scenarios)
     if overrides:
         config = type(config).model_validate({**config.model_dump(), **overrides})
     if selected:
@@ -422,6 +431,15 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                     )
                 )
         assessments.sort(key=lambda a: a.scenario_id)
+        if (
+            status == ExecutionStatus.COMPLETED
+            and config.strict_coverage
+            and any(a.execution_status != ExecutionStatus.COMPLETED for a in assessments)
+        ):
+            status, reason = (
+                ExecutionStatus.PRECONDITION_FAILED,
+                "Strict coverage requires every selected scenario to complete.",
+            )
         provenance["budget_reservations_remaining"] = budget.reserved
         provenance["observed_model_ids"] = sorted(observed_models)
         provenance["provider_fingerprints"] = sorted(provider_fingerprints)
@@ -436,6 +454,13 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
             {"scenario": a.scenario_id, "family": a.family, "status": a.execution_status.value}
             for a in assessments
         ]
+        selected_ids = {a.scenario_id for a in assessments}
+        coverage.extend(
+            {"scenario": s.id, "family": s.family, "status": "not_selected"}
+            for s in all_scenarios
+            if s.id not in selected_ids
+        )
+        coverage.sort(key=lambda row: row["scenario"])
         result = ScanResult(
             run_id=run_id,
             target=config.target_id,

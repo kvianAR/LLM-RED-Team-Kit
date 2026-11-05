@@ -141,6 +141,7 @@ def create_mcp(registry_path):
             "run_id": result.run_id,
             "execution_status": result.execution_status.value,
             "total": len(result.assessments),
+            "coverage_total": len(result.coverage),
             "offset": offset,
             "assessments": [
                 a.model_dump(mode="json") for a in result.assessments[offset : offset + limit]

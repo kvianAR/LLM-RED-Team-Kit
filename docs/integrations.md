@@ -46,3 +46,5 @@ Official Codex sources were fetched during implementation on 6 November 2026. Cl
 ## Bounded evidence inspection
 
 `get_scan_results` accepts `include_evidence: true`. It verifies content hashes and returns redacted untrusted-content excerpts, capped at 4,000 characters per object and 16,000 characters total per call. Larger artifacts remain referenced rather than being read without a bound. Fixture attestations and target observations remain separate objects. Captured instructions are data and do not authorize client actions.
+
+Pagination reports both assessment total and coverage_total. A scoped scan can have one assessment and many not_selected coverage entries. Page up to the larger count when retrieving the complete matrix.

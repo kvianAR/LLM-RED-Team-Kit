@@ -17,6 +17,9 @@ inputs:
   baseline:
     description: Optional canonical baseline report for regression gating
     default: ''
+  strict-coverage:
+    description: Require all selected scenarios to complete
+    default: 'true'
 runs:
   using: composite
   steps:
@@ -31,8 +34,14 @@ runs:
         LLMRT_OUTPUT: ${{ inputs.output }}
         LLMRT_FAIL_ON: ${{ inputs.fail-on }}
         LLMRT_BASELINE: ${{ inputs.baseline }}
+        LLMRT_STRICT_COVERAGE: ${{ inputs.strict-coverage }}
       run: |
         scanner_root="$(cd "$GITHUB_ACTION_PATH/../../.." && pwd)"
         extra=()
         if [ -n "$LLMRT_BASELINE" ]; then extra+=(--baseline "$LLMRT_BASELINE"); fi
+        case "$LLMRT_STRICT_COVERAGE" in
+          true) extra+=(--strict-coverage) ;;
+          false) ;;
+          *) echo 'strict-coverage must be true or false'; exit 2 ;;
+        esac
         uv run --project "$scanner_root" --frozen --no-dev llmrt scan --config "$LLMRT_CONFIG" --output "$LLMRT_OUTPUT" --fail-on "$LLMRT_FAIL_ON" "${extra[@]}"

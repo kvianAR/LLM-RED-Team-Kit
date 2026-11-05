@@ -38,6 +38,7 @@ def parser():
     scan.add_argument("--fail-on", choices=["none", "confirmed", "high", "any"], default="none")
     scan.add_argument("--judge-model")
     scan.add_argument("--baseline", type=Path)
+    scan.add_argument("--strict-coverage", action="store_true", default=None)
     scan.add_argument("--max-requests", type=int)
     scan.add_argument("--max-cost", type=float)
     scan.add_argument("--max-model-calls", type=int)
@@ -215,7 +216,14 @@ def main(argv=None):
             return 0
         overrides = {
             name: getattr(args, name)
-            for name in ("max_requests", "max_cost", "max_model_calls", "max_tokens", "judge_model")
+            for name in (
+                "max_requests",
+                "max_cost",
+                "max_model_calls",
+                "max_tokens",
+                "judge_model",
+                "strict_coverage",
+            )
             if getattr(args, name) is not None
         }
         result, directory = asyncio.run(

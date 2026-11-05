@@ -123,3 +123,7 @@ Judge is off by default. It receives bounded untrusted target evidence and neces
 Each original scenario has a reviewed vulnerable/protected pair and one primary boundary. Original corpus license is CC-BY-4.0, code Apache-2.0. Imported content preserves its license. Hashes detect content changes. Signatures can establish a configured signer, not template safety.
 
 One canonical result object produces JSON, SARIF, and terminal projections. SARIF uses scenario IDs as rules and stable partial fingerprints. Source locations exist only when valid source evidence exists. Reports include explicit unexecuted and unsupported coverage.
+
+## Selected coverage enforcement
+
+`strict_coverage` or CLI `--strict-coverage` requires every selected scenario to complete. Unsupported selected cases fail this gate. The full corpus coverage matrix also includes `not_selected` rows, so a scoped retest cannot imply full-corpus coverage. The GitHub Action enables strict selected coverage by default.

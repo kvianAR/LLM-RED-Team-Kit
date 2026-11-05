@@ -47,11 +47,11 @@ jobs:
         shell: bash
         run: |
           set +e
-          uv run --frozen llmrt scan --config examples/demo/vulnerable.yaml --output scan-results --fail-on high
+          uv run --frozen llmrt scan --config examples/demo/vulnerable.yaml --output scan-results --fail-on high --strict-coverage
           code=$?
           set -e
           test "$code" = 1
-          uv run --frozen llmrt scan --config examples/demo/protected.yaml --output scan-results --fail-on high
+          uv run --frozen llmrt scan --config examples/demo/protected.yaml --output scan-results --fail-on high --strict-coverage
       - name: Stop lab
         if: always()
         run: test ! -f /tmp/llmrt-lab.pid || kill "$(cat /tmp/llmrt-lab.pid)" || true

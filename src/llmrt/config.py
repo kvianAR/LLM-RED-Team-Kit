@@ -94,6 +94,7 @@ class TargetConfig(Model):
     max_tokens: int | None = Field(default=None, ge=1)
     max_cost: float | None = Field(default=None, gt=0)
     concurrency: int = Field(default=2, ge=1, le=16)
+    strict_coverage: bool = False
     max_duration_seconds: float = Field(default=300, gt=0, le=86400)
     message_field: str = "message"
     response_text_path: str = "text"

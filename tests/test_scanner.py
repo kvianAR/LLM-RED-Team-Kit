@@ -80,3 +80,22 @@ def test_dry_run_has_no_credential(demo):
     plan = json.dumps(plan_scan(root / "vulnerable.yaml"))
     assert "demo-alpha" not in plan
     assert "LLMRT_DEMO_TOKEN" not in plan
+
+
+async def test_strict_coverage_fails_unsupported_selected_cases(demo, tmp_path):
+    root, _, _ = demo
+    modify_config(
+        root / "protected.yaml", strict_coverage=True, capabilities=["chat", "fixtures", "session"]
+    )
+    result, _ = await run_scan(root / "protected.yaml", tmp_path / "runs")
+    assert exit_code(result) == 3
+    assert result.execution_status == "precondition_failed"
+
+
+def test_plan_counts_fixture_controls_and_unselected_cases(demo):
+    root, _, _ = demo
+    whole = plan_scan(root / "protected.yaml")
+    selected = plan_scan(root / "protected.yaml", ["cross_user_basic"])
+    assert whole["estimated_base_requests"] == 145
+    assert selected["estimated_base_requests"] == 4
+    assert len(selected["not_selected"]) == 47
