@@ -18,6 +18,7 @@ from llmrt.models import (
 )
 from llmrt.policy import assert_fixture, self_check
 from llmrt.reporting import write_reports
+from llmrt.templates import render_message
 from llmrt.transport import Budget, BudgetExceeded, HTTPAdapter, TransportError
 
 
@@ -66,7 +67,7 @@ def extract(value, path):
     if path is None:
         return None
     for key in path.split("."):
-        value = value[key]
+        value = value[int(key)] if isinstance(value, list) and key.isdigit() else value[key]
     return value
 
 
@@ -176,10 +177,23 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                         )
                         return
                 session = uuid.uuid4().hex
+                history = []
                 final = None
                 try:
                     for message in scenario.messages:
-                        payload = {config.message_field: message, "session_id": session}
+                        rendered = render_message(
+                            message, config.principal, scenario.resource, session
+                        )
+                        history.append({"role": "user", "content": rendered})
+                        payload = {config.message_field: rendered, "session_id": session}
+                        if config.adapter == "openai_compatible":
+                            payload = {
+                                "model": config.model_id,
+                                "messages": list(history),
+                                "temperature": config.temperature,
+                            }
+                            if config.seed is not None:
+                                payload["seed"] = config.seed
                         if config.include_scenario_fields:
                             payload.update(
                                 operation=scenario.operation,
@@ -215,6 +229,7 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                         reference = store.record(record.model_dump(mode="json"))
                         evidence.append(reference)
                         session = response.session_id or session
+                        history.append({"role": "assistant", "content": response.text})
                         final = assess(config, policy, scenario, response, manifest, reference)
                         if final.verdict == Verdict.CONFIRMED:
                             break
@@ -330,4 +345,5 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
             write_reports(store, result)
         finally:
             store.close()
-    return result, Path(output_root).absolute() / run_id
+    safe_result = ScanResult.model_validate(store.redact(result.model_dump(mode="json")))
+    return safe_result, Path(output_root).absolute() / run_id

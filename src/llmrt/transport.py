@@ -213,7 +213,7 @@ class HTTPAdapter:
                 raise TransportError("Unsupported content encoding")
             try:
                 result = json.loads(body)
-            except (ValueError, UnicodeError):
+            except (ValueError, UnicodeError, RecursionError):
                 raise TransportError("Target response is not valid JSON") from None
             if not isinstance(result, dict):
                 raise TransportError("Expected JSON object response")

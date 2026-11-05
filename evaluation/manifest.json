@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "freeze_date": "2026-11-06",
+  "scope": "Public deterministic reference fixtures; no independent held-out claim",
+  "files": {
+    "development.yaml": "5f77826fd06109cbc9bd9919aaeb0001c05f8aa6ca5179225ae214a73c29a4e8",
+    "reference.yaml": "d36e93fa9b8073ff4208a6794211fa73b7ac3109b119876477fbfb3d349615b4",
+    "validation.yaml": "d7b91a9f83efc087cf3fbfc49dfae1851d0e05a3a2be5fc05ea2d7139c3b210d"
+  }
+}

@@ -1,0 +1,38 @@
+name: LLMRT authorization scan
+description: Policy-backed agent authorization scan by kvianAR
+author: kvianAR
+branding:
+  icon: shield
+  color: blue
+inputs:
+  config:
+    description: Path to the authorized target configuration
+    required: true
+  output:
+    description: Private report directory under the caller workspace
+    default: scan-results
+  fail-on:
+    description: Finding gate (none, confirmed, high, any)
+    default: high
+  baseline:
+    description: Optional canonical baseline report for regression gating
+    default: ''
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
+      with:
+        version: '0.9.7'
+        python-version: '3.12'
+    - name: Execute configured scan
+      shell: bash
+      env:
+        LLMRT_CONFIG: ${{ inputs.config }}
+        LLMRT_OUTPUT: ${{ inputs.output }}
+        LLMRT_FAIL_ON: ${{ inputs.fail-on }}
+        LLMRT_BASELINE: ${{ inputs.baseline }}
+      run: |
+        scanner_root="$(cd "$GITHUB_ACTION_PATH/../../.." && pwd)"
+        extra=()
+        if [ -n "$LLMRT_BASELINE" ]; then extra+=(--baseline "$LLMRT_BASELINE"); fi
+        uv run --project "$scanner_root" --frozen --no-dev llmrt scan --config "$LLMRT_CONFIG" --output "$LLMRT_OUTPUT" --fail-on "$LLMRT_FAIL_ON" "${extra[@]}"

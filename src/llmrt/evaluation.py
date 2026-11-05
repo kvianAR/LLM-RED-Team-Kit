@@ -1,5 +1,7 @@
 """Labeled-suite evaluation with explicit abstentions and repeat-run reporting."""
 
+import hashlib
+import json
 import math
 import tempfile
 from pathlib import Path
@@ -71,6 +73,12 @@ async def evaluate(suite_path, config_paths, output_root, runs=1):
     if not 1 <= runs <= 10:
         raise ValueError("Evaluation supports 1–10 repeated runs")
     suite_path = Path(suite_path)
+    manifest_path = suite_path.parent / "manifest.json"
+    if manifest_path.is_file():
+        freeze = json.loads(manifest_path.read_text())
+        expected = freeze.get("files", {}).get(suite_path.name)
+        if expected and hashlib.sha256(suite_path.read_bytes()).hexdigest() != expected:
+            raise ValueError("Frozen suite content hash differs from manifest")
     suite = load_yaml(suite_path)
     cases = suite.get("cases", [])
     if not isinstance(cases, list) or not 1 <= len(cases) <= 200:
@@ -92,6 +100,8 @@ async def evaluate(suite_path, config_paths, output_root, runs=1):
             scenario = next((s for s in scenarios if s.id == case["scenario"]), None)
             if scenario is None:
                 raise ValueError("Evaluation scenario is absent from corpus")
+            if suite.get("groups") and scenario.group not in suite["groups"]:
+                raise ValueError("Scenario group is absent from declared split")
             with tempfile.TemporaryDirectory(prefix="eval-", dir=output_root) as temporary:
                 directory = Path(temporary)
                 source_base = Path(config_paths[case["target"]]).resolve().parent

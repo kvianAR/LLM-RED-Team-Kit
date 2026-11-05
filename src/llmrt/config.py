@@ -54,6 +54,7 @@ def load_yaml(path: Path):
 class TargetConfig(Model):
     schema_version: Literal[1] = 1
     target_id: LogicalID
+    adapter: Literal["http", "openai_compatible"] = "http"
     endpoint: str
     policy_file: str
     corpus_dir: str
@@ -96,8 +97,20 @@ class TargetConfig(Model):
     judge_max_calls: int = Field(default=5, ge=0, le=100)
     redaction_patterns: list[str] = Field(default_factory=list)
 
+    @model_validator(mode="before")
+    @classmethod
+    def adapter_defaults(cls, data):
+        if isinstance(data, dict) and data.get("adapter") == "openai_compatible":
+            data = dict(data)
+            data.setdefault("response_text_path", "choices.0.message.content")
+            data.setdefault("response_events_path", None)
+            data.setdefault("response_session_path", None)
+        return data
+
     @model_validator(mode="after")
     def validate_scope(self):
+        if self.adapter == "openai_compatible" and not self.model_id:
+            raise ValueError("OpenAI-compatible adapter requires a model identifier")
         for value in (self.endpoint, self.trusted_fixture_url):
             if value is None:
                 continue

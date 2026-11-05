@@ -101,3 +101,21 @@ def apply_review(result, assessment_id, reviewer, verdict, justification, severi
         justification=justification,
     )
     return result.model_copy(update={"reviews": [*result.reviews, record]})
+
+
+def gate_with_baseline(result, fail_on, baseline=None):
+    from llmrt.reporting import exit_code
+
+    code = exit_code(result, fail_on)
+    if code != 1 or baseline is None:
+        return code
+    comparisons = {
+        row["scenario"]: row["classification"]
+        for row in compare_scans(baseline, result)["comparisons"]
+    }
+    remaining = [a for a in result.assessments if comparisons.get(a.scenario_id) != "unchanged"]
+    # Preserve completed control cases so an unchanged-only baseline can pass.
+    if not remaining:
+        return 0
+    filtered = result.model_copy(update={"assessments": remaining})
+    return exit_code(filtered, fail_on)

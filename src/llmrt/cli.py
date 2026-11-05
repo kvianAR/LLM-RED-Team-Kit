@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from llmrt import PROJECT_URL, __version__
-from llmrt.baseline import apply_review, compare_scans, load_report
+from llmrt.baseline import apply_review, compare_scans, gate_with_baseline, load_report
 from llmrt.bootstrap import initialize, install_skill
 from llmrt.config import read_config
 from llmrt.evidence import verify_evidence
@@ -37,6 +37,7 @@ def parser():
     scan.add_argument("--scenario", action="append")
     scan.add_argument("--fail-on", choices=["none", "confirmed", "high", "any"], default="none")
     scan.add_argument("--judge-model")
+    scan.add_argument("--baseline", type=Path)
     scan.add_argument("--max-requests", type=int)
     scan.add_argument("--max-cost", type=float)
     scan.add_argument("--max-model-calls", type=int)
@@ -206,7 +207,9 @@ def main(argv=None):
         )
         print(terminal_report(result))
         print(f"Reports {directory}")
-        return exit_code(result, args.fail_on)
+        return gate_with_baseline(
+            result, args.fail_on, load_report(args.baseline) if args.baseline else None
+        )
     except KeyboardInterrupt:
         return 130
     except (ValueError, OSError) as error:
