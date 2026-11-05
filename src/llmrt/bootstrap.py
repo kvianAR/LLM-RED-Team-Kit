@@ -16,6 +16,22 @@ def corpus_source():
     return Path(__file__).resolve().parents[2] / "corpus" / "scenarios"
 
 
+def install_skill(destination: Path, client: str):
+    packaged = Path(str(files("llmrt").joinpath("data/skill")))
+    source = (
+        packaged
+        if packaged.is_dir()
+        else Path(__file__).resolve().parents[2] / "integrations/skills/agent-security-scan"
+    )
+    folder = ".agents" if client == "codex" else ".claude"
+    target = destination.resolve() / folder / "skills" / "agent-security-scan"
+    if target.exists():
+        raise ValueError("Skill destination already exists")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(source, target)
+    return target
+
+
 def initialize(directory: Path, port=8765):
     directory.mkdir(parents=True, exist_ok=True)
     destination = directory / "corpus"

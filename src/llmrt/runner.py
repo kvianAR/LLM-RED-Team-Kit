@@ -220,7 +220,11 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                             break
                     if judge and final.verdict == Verdict.REVIEW:
                         final = await judge.review(final, scenario, response, manifest, store)
-                    assessments.append(final.model_copy(update={"evidence": evidence}))
+                    assessments.append(
+                        final.model_copy(
+                            update={"evidence": list(dict.fromkeys([*evidence, *final.evidence]))}
+                        )
+                    )
                 except BudgetExceeded:
                     assessments.append(
                         incomplete(

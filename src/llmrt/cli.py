@@ -7,7 +7,8 @@ import sys
 from pathlib import Path
 
 from llmrt import PROJECT_URL, __version__
-from llmrt.bootstrap import initialize
+from llmrt.baseline import apply_review, compare_scans, load_report
+from llmrt.bootstrap import initialize, install_skill
 from llmrt.config import read_config
 from llmrt.evidence import verify_evidence
 from llmrt.reporting import exit_code, terminal_report
@@ -44,6 +45,37 @@ def parser():
     verify.add_argument("directory", type=Path)
     lab = commands.add_parser("lab", help="Run loopback-only deterministic lab")
     lab.add_argument("--port", type=int, default=8765)
+    mcp = commands.add_parser("mcp", help="Serve local stdio MCP using registered target aliases")
+    mcp.add_argument("--registry", type=Path, required=True)
+    skill = commands.add_parser(
+        "install-skill", help="Copy the bundled skill into a selected project"
+    )
+    skill.add_argument("--client", choices=["codex", "claude"], required=True)
+    skill.add_argument("--destination", type=Path, required=True)
+    diff = commands.add_parser("diff", help="Compare canonical reports")
+    diff.add_argument("before", type=Path)
+    diff.add_argument("after", type=Path)
+    diff.add_argument("--purpose", choices=["retest", "model_comparison"], default="retest")
+    review = commands.add_parser("review", help="Append an evidence-bound reviewer decision")
+    review.add_argument("--report", type=Path, required=True)
+    review.add_argument("--assessment", required=True)
+    review.add_argument("--reviewer", required=True)
+    review.add_argument(
+        "--verdict",
+        choices=["confirmed_violation", "no_violation_observed", "needs_review", "inconclusive"],
+        required=True,
+    )
+    review.add_argument(
+        "--severity", choices=["informational", "low", "medium", "high", "critical"]
+    )
+    review.add_argument("--justification", required=True)
+    review.add_argument("--output", type=Path, required=True)
+    retest = commands.add_parser("retest", help="Rerun a recorded finding with fresh fixtures")
+    retest.add_argument("--report", type=Path, required=True)
+    retest.add_argument("--config", type=Path, required=True)
+    retest.add_argument("--finding", required=True)
+    retest.add_argument("--output", type=Path, default=Path("scan-results"))
+    retest.add_argument("--fail-on", choices=["none", "confirmed", "high", "any"], default="none")
     return root
 
 
@@ -54,6 +86,52 @@ def main(argv=None):
             initialize(args.directory, args.port)
             print(f"Demo files created in {args.directory}. Created by @kvianAR | {PROJECT_URL}")
             return 0
+        if args.command == "mcp":
+            from llmrt.mcp_server import serve
+
+            serve(args.registry)
+            return 0
+        if args.command == "install-skill":
+            print(
+                f"Skill installed at {install_skill(args.destination, args.client)}. Created by @kvianAR"
+            )
+            return 0
+        if args.command == "diff":
+            print(
+                json.dumps(
+                    compare_scans(load_report(args.before), load_report(args.after), args.purpose),
+                    indent=2,
+                )
+            )
+            return 0
+        if args.command == "review":
+            result = apply_review(
+                load_report(args.report),
+                args.assessment,
+                args.reviewer,
+                args.verdict,
+                args.justification,
+                args.severity,
+            )
+            import os
+
+            fd = os.open(args.output, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+            with os.fdopen(fd, "w") as stream:
+                stream.write(result.model_dump_json(indent=2))
+            print("Evidence-bound review saved. Original assessment preserved. @kvianAR")
+            return 0
+        if args.command == "retest":
+            baseline = load_report(args.report)
+            selected = [
+                a.scenario_id for a in baseline.assessments if a.fingerprint == args.finding
+            ]
+            if not selected:
+                raise ValueError("Finding fingerprint is absent from baseline")
+            result, directory = asyncio.run(run_scan(args.config, args.output, selected))
+            print(terminal_report(result))
+            print(json.dumps(compare_scans(baseline, result), indent=2))
+            print(f"Reports {directory}")
+            return exit_code(result, args.fail_on)
         if args.command == "lab":
             from llmrt.lab import main as lab_main
 

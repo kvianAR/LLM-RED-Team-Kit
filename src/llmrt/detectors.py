@@ -67,6 +67,17 @@ def assess(config, policy, scenario, response, manifest, evidence):
     fingerprint = None
     severity = None
     rule = None
+    if confirmed or suspicious:
+        fingerprint = Fingerprint(
+            target=config.target_id,
+            scenario=scenario.id,
+            boundary=scenario.boundary,
+            principal_role=role,
+            relationship=relationship,
+            resource=scenario.resource,
+            evidence_class=evidence_class,
+            capabilities=scenario.required_capabilities,
+        ).stable_hash()
     if confirmed:
         boundary = next(b for b in policy.boundaries if b.id == scenario.boundary)
         # Confirmed cross-user confidential reads and forbidden external delivery use high.

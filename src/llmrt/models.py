@@ -247,7 +247,14 @@ class ReviewRecord(Model):
     reviewer: str = Field(min_length=1)
     timestamp: str = Field(default_factory=timestamp)
     verdict: Verdict
+    severity: Severity | None = None
     justification: str = Field(min_length=10)
+
+    @model_validator(mode="after")
+    def require_confirmed_severity(self):
+        if self.verdict == Verdict.CONFIRMED and self.severity is None:
+            raise ValueError("A manual confirmation requires explicit justified severity")
+        return self
 
 
 class ScanResult(Model):

@@ -18,6 +18,19 @@ def effective_verdict(result, assessment):
     return reviews[-1].verdict if reviews else assessment.verdict
 
 
+def effective_severity(result, assessment):
+    reviews = [
+        r
+        for r in result.reviews
+        if r.assessment_id == assessment.id
+        and r.fingerprint == assessment.fingerprint
+        and r.evidence == assessment.evidence
+    ]
+    if reviews:
+        return reviews[-1].severity if reviews[-1].verdict == Verdict.CONFIRMED else None
+    return assessment.severity
+
+
 def exit_code(result, fail_on="none"):
     if result.execution_status == ExecutionStatus.CANCELLED:
         return 130
@@ -48,7 +61,7 @@ def exit_code(result, fail_on="none"):
         if verdict == Verdict.CONFIRMED and (
             fail_on == "confirmed"
             or fail_on == "high"
-            and assessment.severity in ("high", "critical")
+            and effective_severity(result, assessment) in ("high", "critical")
         ):
             return 1
     return 0
