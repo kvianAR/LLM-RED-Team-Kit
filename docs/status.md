@@ -1,0 +1,32 @@
+# Verification status
+
+Build date 6 November 2026. Created by [@kvianAR](https://github.com/kvianAR).
+
+## Implemented and locally verified
+
+Policy/contracts, schemas, paired deterministic lab, fixture gate, CLI, bounded HTTP, per-scenario execution, request budgets, redacted content-addressed evidence, canary/action detectors, terminal/JSON/SARIF/HTML, baseline gating, retest, evidence-bound review, evaluation denominators, local stdio MCP, and skill export.
+
+The local MCP test performs actual protocol initialization, tool listing, scan execution, polling, and paginated result retrieval through a child server process. Skill packaging/export is checked; live discovery inside the user's Claude/Codex clients is unverified.
+
+The source distribution and wheel build successfully. A fresh Python 3.11 wheel environment can export and validate the 48-case demo. Full tests have also run on Python 3.11 and 3.12 on this Mac. Linux GitHub runners have not executed because workflow-write authorization is unavailable.
+
+The public reference evaluation ran 32 cases three times. Each run observed 8 true positives, 24 true negatives, 0 false positives, 0 missed positives, and 0 inconclusive cases. These are deterministic regression results. Related variants and small family counts limit statistical interpretation. Raw metrics include per-run counts and Wilson intervals. No model efficacy percentage is claimed.
+
+Ninety-six generated SARIF reports validated against the SARIF 2.1.0 schema. GitHub code-scanning ingestion is not verified.
+
+## Integration code with limited live verification
+
+OpenAI-compatible request/history mapping is tested with a controlled response. Optional judge request construction, strict output, no-tools behavior, and budget sharing are tested with a fake provider. No paid provider/model request has been made.
+
+## External requirements
+
+- GitHub OAuth `workflow` scope is needed to activate the CI workflow. The reusable action and inert workflow template are pushed; the active workflow file is preserved locally.
+- PyPI credentials/publication are needed for a public installable release and actual name ownership. The current public-name check found no `llmrt` project; no reservation is claimed.
+- Independently authored frozen held-out cases and authorized real/model-backed targets are needed for efficacy claims.
+- Third-party OSS scans, findings, disclosures, and equivalent garak/promptfoo comparisons have not been performed.
+
+## Deferred scope
+
+Mutation, browser automation, general ingestion connectors, and dashboard work remain post-v1. Signature verification is not implemented. Model and fixture integration requirements remain explicit rather than being inferred from chat output.
+
+The current version is a locally verified 0.1.0 development build. It is not a completed external benchmark/disclosure milestone or a public v1 release.

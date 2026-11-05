@@ -1,0 +1,63 @@
+name: Scanner checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
+        with:
+          version: '0.9.7'
+          python-version: ${{ matrix.python }}
+      - run: uv sync --frozen --all-extras
+      - run: uv run --frozen ruff check src tests
+      - run: uv run --frozen ruff format --check src tests
+      - run: uv run --frozen pytest -q
+      - run: uv build
+      - run: uv run --frozen llmrt check-splits evaluation/development.yaml evaluation/validation.yaml evaluation/reference.yaml
+  demo-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
+        with:
+          version: '0.9.7'
+          python-version: '3.12'
+      - run: uv sync --frozen --all-extras
+      - name: Start owned local lab
+        run: |
+          uv run --frozen llmrt lab > /tmp/llmrt-lab.log 2>&1 &
+          echo $! > /tmp/llmrt-lab.pid
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent -H 'Authorization: Bearer demo-alpha' http://127.0.0.1:8765/health; then exit 0; fi
+            sleep 0.25
+          done
+          exit 1
+      - name: Verify vulnerable and protected gates
+        env:
+          LLMRT_DEMO_TOKEN: demo-alpha
+        shell: bash
+        run: |
+          set +e
+          uv run --frozen llmrt scan --config examples/demo/vulnerable.yaml --output scan-results --fail-on high
+          code=$?
+          set -e
+          test "$code" = 1
+          uv run --frozen llmrt scan --config examples/demo/protected.yaml --output scan-results --fail-on high
+      - name: Stop lab
+        if: always()
+        run: test ! -f /tmp/llmrt-lab.pid || kill "$(cat /tmp/llmrt-lab.pid)" || true
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: demo-reports
+          path: scan-results/
+          retention-days: 7
