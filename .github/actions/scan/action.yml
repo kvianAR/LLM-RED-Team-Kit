@@ -22,7 +22,7 @@ runs:
   steps:
     - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
       with:
-        version: '0.9.7'
+        version: '0.13.6'
         python-version: '3.12'
     - name: Execute configured scan
       shell: bash

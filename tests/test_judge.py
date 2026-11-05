@@ -50,7 +50,7 @@ async def test_optional_judge_offline_and_shared_budget(demo, tmp_path, monkeypa
     assert result.assessments[0].verdict == Verdict.REVIEW
     assert len(result.assessments[0].evidence) == 2
     assert len(calls) == result.model_calls == 1
-    assert result.requests == 3
+    assert result.requests == 5
     assert "tools" not in calls[0]
     assert "synthetic-judge-credential" not in json.dumps(calls)
 

@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
         with:
-          version: '0.9.7'
+          version: '0.13.6'
           python-version: ${{ matrix.python }}
       - run: uv sync --frozen --all-extras
       - run: uv run --frozen ruff check src tests
@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
         with:
-          version: '0.9.7'
+          version: '0.13.6'
           python-version: '3.12'
       - run: uv sync --frozen --all-extras
       - name: Start owned local lab

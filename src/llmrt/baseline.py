@@ -24,6 +24,7 @@ def compare_scans(before, after, purpose="retest"):
         "fixture_semantics_hash",
         "trace_verified_by_operator",
         "engine_contract",
+        "fixture_isolation",
     )
     global_compatible = (
         before.target == after.target

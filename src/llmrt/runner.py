@@ -7,6 +7,7 @@ from pathlib import Path
 from llmrt.config import load_yaml, read_config
 from llmrt.detectors import assess
 from llmrt.evidence import EvidenceStore
+from llmrt.fixtures import fixture_context
 from llmrt.models import (
     Assessment,
     EvidenceRecord,
@@ -103,6 +104,7 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
     reason = ""
     provenance = {
         "engine_contract": 2,
+        "fixture_isolation": "scoped_lease" if config.fixture_session_url else "operator_managed",
         "policy_hash": digest(policy),
         "config_hash": digest(config),
         "templates": {s.id: digest(s) for s in scenarios},
@@ -148,7 +150,7 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
             {k: v for k, v in manifest.items() if k != "canaries"}
         )
 
-        async def execute(scenario):
+        async def execute_body(scenario, case_manifest, session):
             evidence = []
             async with semaphore:
                 missing = set(scenario.required_capabilities) - set(config.capabilities)
@@ -162,7 +164,7 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                     )
                     return
                 for assertion in scenario.preconditions:
-                    outcome = assert_fixture(assertion, manifest, fresh=True)
+                    outcome = assert_fixture(assertion, case_manifest, fresh=True)
                     if outcome != "pass":
                         case_status = (
                             ExecutionStatus.UNSUPPORTED
@@ -177,7 +179,7 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                             )
                         )
                         return
-                if scenario.operation == "disclose" and not manifest.get("canaries", {}).get(
+                if scenario.operation == "disclose" and not case_manifest.get("canaries", {}).get(
                     scenario.resource
                 ):
                     assessments.append(
@@ -188,7 +190,6 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                         )
                     )
                     return
-                session = uuid.uuid4().hex
                 history = []
                 final = None
                 observations = []
@@ -234,7 +235,7 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                             scenario_id=scenario.id,
                             template_hash=digest(scenario),
                             policy_hash=digest(policy),
-                            fixture_hash=digest(manifest),
+                            fixture_hash=digest(case_manifest),
                             request=payload,
                             response=response,
                             source="configured_target_adapter",
@@ -244,7 +245,7 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                         session = response.session_id or session
                         history.append({"role": "assistant", "content": response.text})
                         observations.append(
-                            assess(config, policy, scenario, response, manifest, reference)
+                            assess(config, policy, scenario, response, case_manifest, reference)
                         )
                         rank = {
                             Verdict.CLEAN: 0,
@@ -256,7 +257,7 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                         if final.verdict == Verdict.CONFIRMED:
                             break
                     if judge and final.verdict == Verdict.REVIEW:
-                        final = await judge.review(final, scenario, response, manifest, store)
+                        final = await judge.review(final, scenario, response, case_manifest, store)
                     assessments.append(
                         final.model_copy(
                             update={"evidence": list(dict.fromkeys([*evidence, *final.evidence]))}
@@ -304,6 +305,48 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                         )
                     )
                     raise
+
+        fixture_semaphore = asyncio.Semaphore(config.concurrency)
+
+        async def execute(scenario):
+            missing = set(scenario.required_capabilities) - set(config.capabilities)
+            if missing or scenario.principal != config.principal:
+                await execute_body(scenario, manifest, uuid.uuid4().hex)
+                return
+            try:
+                async with fixture_semaphore:
+                    async with fixture_context(adapter, policy, manifest) as (fresh, session):
+                        await execute_body(scenario, fresh, session)
+            except asyncio.CancelledError:
+                raise
+            except (
+                BudgetExceeded,
+                TimeoutError,
+                OSError,
+                TransportError,
+                ValueError,
+                asyncio.IncompleteReadError,
+            ) as error:
+                case_status = (
+                    ExecutionStatus.BUDGET_EXHAUSTED
+                    if isinstance(error, BudgetExceeded)
+                    else ExecutionStatus.TIMEOUT
+                    if isinstance(error, TimeoutError)
+                    else ExecutionStatus.TARGET_ERROR
+                )
+                existing = next((a for a in assessments if a.scenario_id == scenario.id), None)
+                message = (
+                    f"Fixture setup/cleanup failed ({type(error).__name__}); state is unverified."
+                )
+                if existing:
+                    assessments[assessments.index(existing)] = existing.model_copy(
+                        update={
+                            "execution_status": case_status,
+                            "reason": existing.reason + " " + message,
+                        }
+                    )
+                else:
+                    assessments.append(incomplete(scenario, case_status, message))
 
         if status == ExecutionStatus.COMPLETED:
             async with asyncio.TaskGroup() as group:

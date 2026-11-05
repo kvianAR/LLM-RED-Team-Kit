@@ -3,6 +3,7 @@
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 
 from llmrt.models import canonical_bytes
@@ -79,6 +80,10 @@ def verify_evidence(directory: Path):
     with (directory / "manifest.jsonl").open() as stream:
         for line in stream:
             entry = json.loads(line)
+            if not isinstance(entry, dict) or not re.fullmatch(
+                r"[a-f0-9]{64}", str(entry.get("digest", ""))
+            ):
+                raise ValueError("Invalid evidence digest")
             name = entry["digest"] + ".json"
             if name != entry["file"] or len(entry["digest"]) != 64:
                 raise ValueError("Invalid evidence reference")

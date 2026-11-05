@@ -98,6 +98,8 @@ Request reservations are atomic and every retry counts. Used reservations remain
 
 Network scope includes scheme, hostname, port, resolved addresses, each redirect, redirect count, TLS verification, compressed/decompressed byte limits, and deadlines. Credentials are sent only to the configured origin. No ambient proxy is inherited. Unsafe TLS is explicit and report-visible.
 
+Scoped fixture setup reserves cleanup capacity before creation. Session IDs are scanner-chosen and principal-bound. Fresh canaries and tool effects belong to that lease. Cleanup may use a bounded two-second grace after the active deadline, remains within the request cap, and clears local fixture state after success, error, or cancellation. Without this protocol, fixture isolation is an explicit operator responsibility.
+
 ## 8. Comparability and reviews
 
 Comparison requires matching logical boundary, compatible scenario major version, fingerprint version, policy semantics, fixture semantics, relevant evidence capabilities, and successful applicable execution. Model/configuration changes are recorded and can be allowed for an explicit comparison purpose. Incomplete or incompatible cases are `not_comparable`. Absent findings are `not_reproduced`, not automatically fixed. `regressed` requires historical non-reproducing evidence.

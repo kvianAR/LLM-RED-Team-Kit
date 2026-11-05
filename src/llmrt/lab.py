@@ -5,6 +5,7 @@ The deterministic command router is not an LLM. It exercises scanner mechanics.
 
 import argparse
 import json
+import re
 import secrets
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -68,6 +69,7 @@ class DemoLab:
         self.policy = demo_policy()
         self.canaries = {r.id: make_canary("record") for r in self.policy.resources}
         self.sessions: set[str] = set()
+        self.contexts: dict[str, dict] = {}
         self.effects: list[dict] = []
         self.lock = threading.Lock()
 
@@ -83,24 +85,55 @@ class DemoLab:
             "mode": "deterministic_fixture",
         }
 
+    def create_context(self, principal, session=None):
+        from llmrt.canary import make_canary
+
+        with self.lock:
+            if len(self.contexts) >= 256:
+                raise ValueError("Fixture context limit reached")
+            session = session or secrets.token_hex(16)
+            if not re.fullmatch(r"[a-f0-9]{32}", session):
+                raise ValueError("Invalid fixture session ID")
+            if session in self.contexts:
+                if self.contexts[session]["principal"] != principal:
+                    raise ValueError("Fixture principal mismatch")
+                return self.contexts[session]["manifest"]
+            manifest = self.manifest()
+            manifest["canaries"] = {r.id: make_canary("record") for r in self.policy.resources}
+            manifest["session_id"] = session
+            self.contexts[session] = {"principal": principal, "manifest": manifest, "effects": []}
+            return manifest
+
+    def delete_context(self, principal, session):
+        with self.lock:
+            context = self.contexts.get(session)
+            if context and context["principal"] != principal:
+                raise ValueError("Fixture context principal mismatch")
+            self.contexts.pop(session, None)
+            self.sessions.discard(session)
+
     def execute(self, principal: str, request: dict, protected: bool) -> TargetResponse:
         with self.lock:
             return self._execute(principal, request, protected)
 
     def _execute(self, principal: str, request: dict, protected: bool) -> TargetResponse:
         session = request.get("session_id") or secrets.token_hex(16)
+        context = self.contexts.get(session)
+        if context and context["principal"] != principal:
+            raise ValueError("Session principal mismatch")
+        canaries = context["manifest"]["canaries"] if context else self.canaries
         self.sessions.add(session)
         operation = request.get("operation", "read")
         resource = request.get("resource", "record_beta")
         destination = request.get("destination", "external_sink")
-        if resource not in self.canaries:
+        if resource not in canaries:
             raise ValueError("Unknown fixture resource")
         events = []
         if operation == "disclose":
             text = (
                 "Protected context withheld."
                 if protected and not self.policy.allows(principal, resource)
-                else self.canaries[resource]
+                else canaries[resource]
             )
             return TargetResponse(text=text, session_id=session)
         if operation == "document":
@@ -118,7 +151,7 @@ class DemoLab:
         if operation == "argument":
             # A different argument name must not bypass the same authorization decision.
             resource = request.get("lookup_record", resource)
-            if resource not in self.canaries:
+            if resource not in canaries:
                 raise ValueError("Unknown lookup resource")
             operation = "read"
         tool = "send_message" if operation == "send" else "get_customer_record"
@@ -138,11 +171,12 @@ class DemoLab:
         if protected and not allowed:
             events.append(ExecutionEvent(phase="execution", success=False, **fields))
             return TargetResponse(text="Permission denied.", events=events, session_id=session)
-        data = {"content": self.canaries[resource]} if operation == "read" else {}
+        data = {"content": canaries[resource]} if operation == "read" else {}
         events.append(ExecutionEvent(phase="execution", success=True, data=data, **fields))
         events.append(ExecutionEvent(phase="effect", success=True, data=data, **fields))
-        self.effects.append(events[-1].model_dump(mode="json"))
-        text = self.canaries[resource] if operation == "read" else "Message delivered to mock sink."
+        effects = context["effects"] if context else self.effects
+        effects.append(events[-1].model_dump(mode="json"))
+        text = canaries[resource] if operation == "read" else "Message delivered to mock sink."
         return TargetResponse(text=text, events=events, session_id=session)
 
 
@@ -178,6 +212,15 @@ def create_server(host="127.0.0.1", port=8765, lab=None):
             principal = self.principal()
             if not principal:
                 return self.reply(401, {"error": "Unauthorized"})
+            if self.path == "/sessions":
+                try:
+                    length = int(self.headers.get("Content-Length", 0))
+                    if not 0 < length <= 256:
+                        raise ValueError("Invalid fixture payload")
+                    payload = json.loads(self.rfile.read(length))
+                    return self.reply(200, fixture.create_context(principal, payload["session_id"]))
+                except (ValueError, TypeError, KeyError):
+                    return self.reply(409, {"error": "Fixture context unavailable"})
             if self.path not in ("/vulnerable/chat", "/protected/chat"):
                 return self.reply(404, {"error": "Unknown route"})
             try:
@@ -185,10 +228,24 @@ def create_server(host="127.0.0.1", port=8765, lab=None):
                 if not 0 < length <= 65536:
                     return self.reply(413, {"error": "Invalid request size"})
                 request = json.loads(self.rfile.read(length))
+                if request.get("session_id") not in fixture.contexts:
+                    raise ValueError("Create an isolated fixture session first")
                 response = fixture.execute(principal, request, "/protected/" in self.path)
                 self.reply(200, response.model_dump(mode="json"))
             except (ValueError, TypeError, KeyError):
                 self.reply(400, {"error": "Invalid fixture request"})
+
+        def do_DELETE(self):
+            principal = self.principal()
+            if not principal:
+                return self.reply(401, {"error": "Unauthorized"})
+            if not self.path.startswith("/sessions/"):
+                return self.reply(404, {"error": "Unknown route"})
+            try:
+                fixture.delete_context(principal, self.path.rsplit("/", 1)[1])
+                self.reply(200, {"cleaned": True})
+            except ValueError:
+                self.reply(403, {"error": "Fixture context principal mismatch"})
 
     return ThreadingHTTPServer((host, port), Handler)
 

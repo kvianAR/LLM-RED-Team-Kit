@@ -21,3 +21,4 @@ allowed_ports:
 allow_private: true
 include_scenario_fields: true
 max_requests: 150
+fixture_session_url: http://127.0.0.1:8765/sessions

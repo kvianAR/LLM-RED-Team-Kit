@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.26,<2"]
+requires = ["hatchling==1.33.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -33,6 +33,7 @@ packages = ["src/llmrt"]
 [tool.hatch.build.targets.wheel.force-include]
 "corpus/scenarios" = "llmrt/data/corpus"
 "corpus/LICENSE" = "llmrt/data/CORPUS-LICENSE"
+"corpus/README.md" = "llmrt/data/CORPUS-README.md"
 "integrations/skills/agent-security-scan" = "llmrt/data/skill"
 
 [tool.pytest.ini_options]

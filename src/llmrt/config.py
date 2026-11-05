@@ -62,6 +62,7 @@ class TargetConfig(Model):
     principal: LogicalID = "user_alpha"
     auth_token_env: str
     trusted_fixture_url: str | None = None
+    fixture_session_url: str | None = None
     fixture_file: str | None = None
     fixture_verified_by_operator: bool = False
     capabilities: list[str] = Field(default_factory=lambda: ["chat"])
@@ -114,7 +115,7 @@ class TargetConfig(Model):
     def validate_scope(self):
         if self.adapter == "openai_compatible" and not self.model_id:
             raise ValueError("OpenAI-compatible adapter requires a model identifier")
-        for value in (self.endpoint, self.trusted_fixture_url):
+        for value in (self.endpoint, self.trusted_fixture_url, self.fixture_session_url):
             if value is None:
                 continue
             parts = urlsplit(value)

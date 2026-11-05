@@ -52,6 +52,7 @@ def initialize(directory: Path, port=8765):
             "auth_token_env": "LLMRT_DEMO_TOKEN",
             "profile": "deterministic",
             "trusted_fixture_url": f"http://127.0.0.1:{port}/manifest",
+            "fixture_session_url": f"http://127.0.0.1:{port}/sessions",
             "fixture_verified_by_operator": True,
             "trace_verified_by_operator": True,
             "capabilities": ["chat", "tool_trace", "fixtures", "documents", "session"],

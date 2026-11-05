@@ -44,6 +44,12 @@ Request attempts and redirects consume budget. POST retries require `idempotency
 
 Token/model/currency caps require declared per-target upper bounds. Judge token/cost limits also require per-judge bounds. These are conservative accounting assumptions, not measured target internals. Actual hidden target usage remains unknown. All provider requests share the request/duration budget.
 
+## Optional scoped fixture leases
+
+Set `fixture_session_url` only for an owner-provided fixture control endpoint. The reference lab uses `/sessions`. A POST with a scanner-generated 32-character hexadecimal session ID creates isolated synthetic resources and returns a self-checked manifest containing that same ID. DELETE on `/sessions/ID` clears the scoped state. These control requests do not consume declared target model-call units.
+
+The runner reserves cleanup request capacity before setup, then creates fresh per-case canaries. Cleanup uses the reserved request and a maximum two-second grace after the active execution deadline, including cancellation. Ambiguous setup still attempts idempotent cleanup using the client-chosen ID. Completed execution with failed cleanup becomes incomplete. Operator-managed targets without this protocol retain explicit `operator_managed` isolation provenance.
+
 ## Output handling
 
 Evidence redacts credential values and configured literal patterns before writing. Output roots cannot contain symlinks; private run directories use fixed safe filenames. TLS verification defaults on, unsafe mode is explicit in provenance, and ambient proxies are not inherited.
