@@ -1,0 +1,11 @@
+Use case: infographic-diagram.
+Create a detailed, highly legible software architecture flow image titled "LLM RED TEAM KIT" with subtitle "Build roadmap and scan lifecycle". English labels. Landscape high-resolution composition, clean professional white background, dark navy typography, blue/teal workflow boxes, amber for uncertainty, red for confirmed violations. Clear numbered sections, plenty of spacing, precise arrows, no decorative robots.
+Top strip "BUILD ORDER" with 6 numbered cards flowing left to right: "1. Demo lab", "2. Config + templates", "3. Runner + evidence", "4. Detectors + reports", "5. CI + evaluation", "6. Advanced adapters".
+Main area title "ONE SCAN — END TO END". Left-to-right connected lanes:
+First lane "INPUTS": boxes "Target config", "Policy + scope", "YAML attacks", all into "Validate + plan".
+Second lane "EXECUTION": "Budget + rate limits" then "Isolated test session" then "API adapter / Agent adapter / UI adapter" then "Authorized target". Below target connect "Responses + tool traces + sink events" then "Evidence store".
+Third lane "DETECTION": Evidence store into "Canary checks + policy checks" then "Optional isolated judge" then decision diamond "Evidence sufficient?". Three branches "Confirmed violation", "No violation observed", "Inconclusive / needs review". Confirmed violation alone goes to "Impact-based severity". All branches join "JSON + SARIF + HTML" then "CI gate + coverage".
+Bottom lane "FIX AND RETEST": "Review evidence" then "Patch target controls" then "Rerun same case" then "Compare baseline", with loop back toward authorized target.
+Bottom right small callout "OPTIONAL LATER" and text "LLM mutation • Multi-turn chains • Document injection • UI automation".
+Footer two concise statements "Synthetic secrets and mock tools in demo lab" and "A clean scan covers tested scenarios only".
+Make all labels accurate, readable, with arrows avoiding text. Distinguish build order from runtime flow.
