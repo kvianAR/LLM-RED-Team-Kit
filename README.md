@@ -93,7 +93,7 @@ Baseline gating suppresses compatible unchanged findings. Incompatible or incomp
 
 Exit codes are 0 for passing execution/gate, 1 for triggered finding gate, 2 for config/policy errors, 3 for incomplete execution/runtime failure, and 130 for interruption. Default finding gate is `none`; operational failures still return errors.
 
-The reusable action is `.github/actions/scan`. Its credentials come from the caller's trusted environment. A full workflow template is in `integrations/github/ci.yml`. Activating `.github/workflows/ci.yml` requires GitHub workflow-write permission; that permission is currently missing from the connected OAuth login.
+The reusable action is `.github/actions/scan`. Its credentials come from the caller's trusted environment. A full workflow template is in `integrations/github/ci.yml`. The active `.github/workflows/ci.yml` runs compatibility checks on Python 3.11, 3.12, and 3.13 plus vulnerable/protected demo gates on Linux. Its [first run passed](https://github.com/kvianAR/llm-red-team-kit/actions/runs/42116493943).
 
 ## Evaluation
 

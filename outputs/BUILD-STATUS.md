@@ -4,7 +4,7 @@ Created by [@kvianAR](https://github.com/kvianAR). Canonical project folder is `
 
 ## Verified delivery
 
-- 60 regression tests pass on Python 3.11 and 3.12 on macOS.
+- 60 regression tests pass on Python 3.11 and 3.12 on macOS. GitHub CI also passed on Linux for Python 3.11, 3.12, and 3.13, including package builds and the paired demo gate. [Verified run](https://github.com/kvianAR/llm-red-team-kit/actions/runs/42116493943).
 - Source distribution and wheel build. A fresh Python 3.11 wheel installation validates the 48-case corpus and runs a protected scan successfully.
 - CLI and local stdio MCP share one engine. Eight MCP tools have a real SDK protocol roundtrip test, including paginated results and bounded verified evidence excerpts.
 - Skill export for Codex and Claude preserves SKILL.md and references. Live discovery/invocation inside those clients remains unverified.
@@ -24,7 +24,7 @@ Created by [@kvianAR](https://github.com/kvianAR). Canonical project folder is `
 
 ## Remaining external requirements
 
-The connected GitHub OAuth login cannot write active workflow files without the `workflow` scope. The reusable action and inactive template are pushed. The active workflow is preserved locally for activation after authorization. Run `gh auth refresh -h github.com -s workflow` and complete GitHub's browser approval before the pending workflow push.
+GitHub workflow-write permission is verified. The active CI workflow is pushed and its first run passed.
 
 PyPI publication/name ownership has not been established. Public lookup found no llmrt project during setup. A successful authenticated package publication is required to claim ownership.
 

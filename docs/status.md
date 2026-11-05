@@ -8,7 +8,7 @@ Policy/contracts, schemas, principal-bound paired deterministic lab, fixture gat
 
 The local MCP test performs actual protocol initialization, tool listing, scan execution, polling, and paginated result retrieval through a child server process. Skill packaging/export is checked; live discovery inside the user's Claude/Codex clients is unverified.
 
-The source distribution and wheel build successfully. A fresh Python 3.11 wheel environment can export and validate the 48-case demo. All 60 regression tests pass on Python 3.11 and 3.12 on this Mac. Linux GitHub runners have not executed because workflow-write authorization is unavailable.
+The source distribution and wheel build successfully. A fresh Python 3.11 wheel environment can export and validate the 48-case demo. All 60 regression tests pass on Python 3.11 and 3.12 on this Mac. The active GitHub workflow also passed on Linux for Python 3.11, 3.12, and 3.13, including lint, formatting, all 60 tests, package builds, dataset-split validation, and the vulnerable/protected demo gate. [Verified run](https://github.com/kvianAR/llm-red-team-kit/actions/runs/42116493943).
 
 The public reference evaluation ran 32 cases three times under one 1,000-request command budget and dispatched 384 local requests. Each run observed 8 true positives, 24 true negatives, 0 false positives, 0 missed positives, and 0 inconclusive cases. These are deterministic regression results. Related variants and small family counts limit statistical interpretation. Raw metrics include per-run counts and Wilson intervals. No model efficacy percentage is claimed.
 
@@ -20,7 +20,6 @@ OpenAI-compatible request/history mapping is tested with a controlled response. 
 
 ## External requirements
 
-- GitHub OAuth `workflow` scope is needed to activate the CI workflow. The reusable action and inert workflow template are pushed; the active workflow file is preserved locally.
 - PyPI credentials/publication are needed for a public installable release and actual name ownership. The current public-name check found no `llmrt` project; no reservation is claimed.
 - Independently authored frozen held-out cases and authorized real/model-backed targets are needed for efficacy claims.
 - Third-party OSS scans, findings, disclosures, and equivalent garak/promptfoo comparisons have not been performed.
