@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling>=1.26,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llmrt"
+version = "0.1.0"
+description = "Agent tool-authorization and data-boundary scanner by kvianAR"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{name = "Aditya Ranjan", email = "adityaranjan078@gmail.com"}]
+dependencies = ["pydantic>=2.10,<3", "PyYAML>=6.0.2,<7"]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.12,<2"]
+judge = ["openai>=1.60,<3"]
+
+[dependency-groups]
+dev = ["pytest>=8.3,<10", "pytest-asyncio>=0.25,<2", "ruff>=0.9,<1", "build>=1.2,<2"]
+
+[project.scripts]
+llmrt = "llmrt.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/kvianAR/llm-red-team-kit"
+Repository = "https://github.com/kvianAR/llm-red-team-kit"
+Issues = "https://github.com/kvianAR/llm-red-team-kit/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/llmrt"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
