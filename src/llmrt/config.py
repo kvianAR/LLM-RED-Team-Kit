@@ -101,14 +101,23 @@ class TargetConfig(Model):
             if value is None:
                 continue
             parts = urlsplit(value)
-            if (parts.scheme not in ("http", "https") or not parts.hostname
-                    or parts.username or parts.password or parts.fragment):
-                raise ValueError("Target URLs require HTTP(S) and cannot contain userinfo/fragments")
+            if (
+                parts.scheme not in ("http", "https")
+                or not parts.hostname
+                or parts.username
+                or parts.password
+                or parts.fragment
+            ):
+                raise ValueError(
+                    "Target URLs require HTTP(S) and cannot contain userinfo/fragments"
+                )
             if parts.hostname.lower() not in [h.lower() for h in self.allowed_hosts]:
                 raise ValueError("URL host is outside scope")
             if (parts.port or (443 if parts.scheme == "https" else 80)) not in self.allowed_ports:
                 raise ValueError("URL port is outside scope")
-        if self.profile == "model_backed" and (not self.model_id or "latest" in self.model_id.lower()):
+        if self.profile == "model_backed" and (
+            not self.model_id or "latest" in self.model_id.lower()
+        ):
             raise ValueError("Model-backed profile requires an explicit non-latest model ID")
         if self.max_model_calls and self.model_calls_per_request is None:
             raise ValueError("Model-call limit requires a declared upper bound per target request")
@@ -142,8 +151,13 @@ def read_config(path: Path):
     principals = {p.id for p in policy.principals}
     for scenario in scenarios:
         boundary = boundaries.get(scenario.boundary)
-        if (boundary is None or scenario.resource not in resources or scenario.principal not in principals
-                or scenario.family != boundary.family or scenario.owasp != boundary.owasp):
+        if (
+            boundary is None
+            or scenario.resource not in resources
+            or scenario.principal not in principals
+            or scenario.family != boundary.family
+            or scenario.owasp != boundary.owasp
+        ):
             raise ValueError("Scenario references must match policy and taxonomy")
         if not scenario.reviewed or not scenario.review_notes:
             raise ValueError("Scenario requires review provenance")

@@ -20,8 +20,9 @@ def classify_canary(text: str, token: str) -> str:
     if any(value in text for value in encoded):
         return "transformed"
     random_part = token.split("_")[-2]
-    if len(random_part) >= 16 and any(random_part[i:i + 16] in text
-                                      for i in range(len(random_part) - 15)):
+    if len(random_part) >= 16 and any(
+        random_part[i : i + 16] in text for i in range(len(random_part) - 15)
+    ):
         return "partial"
     if "LLMRT_" in text:
         return "prefix"

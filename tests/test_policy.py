@@ -1,4 +1,5 @@
 import pytest
+import yaml
 
 from llmrt.config import load_yaml
 from llmrt.lab import DemoLab
@@ -18,14 +19,25 @@ def test_assertion_states_and_boolean_type():
     assertion = Assertion(check="resource_owner", subject="record_beta", equals="user_beta")
     assert assert_fixture(assertion, {}, True) == "unavailable"
     assert assert_fixture(assertion, DemoLab().manifest(), True) == "pass"
-    assert assert_fixture(assertion.model_copy(update={"equals": "user_alpha"}),
-                          DemoLab().manifest(), True) == "fail"
+    assert (
+        assert_fixture(
+            assertion.model_copy(update={"equals": "user_alpha"}), DemoLab().manifest(), True
+        )
+        == "fail"
+    )
 
 
-@pytest.mark.parametrize("text", ["x: &a [1]\ny: *a", "x: 1\nx: 2", "x: !!python/object:os.system {}",
-                                  "x: " + "[" * 40 + "0" + "]" * 40])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "x: &a [1]\ny: *a",
+        "x: 1\nx: 2",
+        "x: !!python/object:os.system {}",
+        "x: " + "[" * 40 + "0" + "]" * 40,
+    ],
+)
 def test_yaml_rejects_unsafe_documents(tmp_path, text):
     path = tmp_path / "bad.yaml"
     path.write_text(text)
-    with pytest.raises(Exception):
+    with pytest.raises((ValueError, yaml.YAMLError)):
         load_yaml(path)

@@ -25,6 +25,7 @@ def test_send_and_document_pairs():
 
 def test_canary_outcomes():
     import base64
+
     token = make_canary("record")
     assert classify_canary(token, token) == "full"
     assert classify_canary(base64.b64encode(token.encode()).decode(), token) == "transformed"

@@ -15,8 +15,9 @@ Severity = Literal["informational", "low", "medium", "high", "critical"]
 def canonical_bytes(value: object) -> bytes:
     if isinstance(value, BaseModel):
         value = value.model_dump(mode="json")
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
-                      allow_nan=False).encode("utf-8")
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode("utf-8")
 
 
 def digest(value: object) -> str:
@@ -39,6 +40,7 @@ class ExecutionStatus(StrEnum):
     POLICY_UNVERIFIED = "policy_unverified"
     TIMEOUT = "timeout"
     TARGET_ERROR = "target_error"
+    SCANNER_ERROR = "scanner_error"
     BUDGET_EXHAUSTED = "budget_exhausted"
     CANCELLED = "cancelled"
 
@@ -127,8 +129,15 @@ class Policy(Model):
 
 
 class Assertion(Model):
-    check: Literal["resource_owner", "resource_exists", "tool_registered", "destination_allowed",
-                   "document_available", "canary_planted", "session_fresh"]
+    check: Literal[
+        "resource_owner",
+        "resource_exists",
+        "tool_registered",
+        "destination_allowed",
+        "document_available",
+        "canary_planted",
+        "session_fresh",
+    ]
     subject: str
     equals: str | bool
 
@@ -216,12 +225,16 @@ class Assessment(Model):
     fingerprint: str | None = None
     evidence: list[str] = Field(default_factory=list)
     canary_outcome: str | None = None
+    mitigation: str = ""
 
     @model_validator(mode="after")
     def confirmed_requires_evidence(self):
-        if self.verdict == Verdict.CONFIRMED and not (self.evidence and self.fingerprint
-                                                       and self.severity and self.severity_rule):
-            raise ValueError("Confirmed violations require evidence, fingerprint, and severity rule")
+        if self.verdict == Verdict.CONFIRMED and not (
+            self.evidence and self.fingerprint and self.severity and self.severity_rule
+        ):
+            raise ValueError(
+                "Confirmed violations require evidence, fingerprint, and severity rule"
+            )
         if self.verdict != Verdict.CONFIRMED and self.severity is not None:
             raise ValueError("Only confirmed violations receive severity")
         return self

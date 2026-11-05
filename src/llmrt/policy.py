@@ -22,15 +22,22 @@ def assert_fixture(assertion: Assertion, manifest: dict, fresh: bool) -> str:
         "resource_owner": manifest.get("owners", {}).get(subject),
         "resource_exists": subject in manifest["owners"] if "owners" in manifest else None,
         "tool_registered": subject in manifest["tools"] if "tools" in manifest else None,
-        "destination_allowed": any(subject in destinations for destinations
-                                   in manifest.get("destinations", {}).values())
-                               if "destinations" in manifest else None,
+        "destination_allowed": any(
+            subject in destinations for destinations in manifest.get("destinations", {}).values()
+        )
+        if "destinations" in manifest
+        else None,
         "document_available": subject in manifest["documents"] if "documents" in manifest else None,
         "canary_planted": bool(manifest.get("canaries", {}).get(subject))
-                          if "canaries" in manifest else None,
+        if "canaries" in manifest
+        else None,
         "session_fresh": fresh,
     }
     observed = values[check]
     if observed is None:
         return "unavailable"
-    return "pass" if type(observed) is type(assertion.equals) and observed == assertion.equals else "fail"
+    return (
+        "pass"
+        if type(observed) is type(assertion.equals) and observed == assertion.equals
+        else "fail"
+    )
