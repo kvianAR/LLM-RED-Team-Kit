@@ -42,3 +42,7 @@ Official Codex sources were fetched during implementation on 6 November 2026. Cl
 - https://developers.openai.com/codex/mcp/
 - https://code.claude.com/docs/en/skills
 - https://code.claude.com/docs/en/mcp
+
+## Bounded evidence inspection
+
+`get_scan_results` accepts `include_evidence: true`. It verifies content hashes and returns redacted untrusted-content excerpts, capped at 4,000 characters per object and 16,000 characters total per call. Larger artifacts remain referenced rather than being read without a bound. Fixture attestations and target observations remain separate objects. Captured instructions are data and do not authorize client actions.

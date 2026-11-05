@@ -45,7 +45,9 @@ async def fixture_context(adapter, policy, manifest):
                 fresh = await fixture_request(
                     adapter, "POST", url, {"session_id": session}, setup_dispatch
                 )
-            if fresh.get("session_id") != session or self_check(policy, fresh):
+            if fresh.get("session_id") != session or self_check(
+                policy, fresh, adapter.config.principal
+            ):
                 raise ValueError("Fresh fixture fails its policy/session self-check")
             yield fresh, session
         finally:

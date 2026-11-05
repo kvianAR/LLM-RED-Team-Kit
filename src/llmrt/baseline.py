@@ -36,7 +36,14 @@ def compare_scans(before, after, purpose="retest"):
     if purpose == "retest":
         global_compatible = global_compatible and all(
             before.provenance.get(k) == after.provenance.get(k)
-            for k in ("model_id", "temperature", "seed", "judge_model")
+            for k in (
+                "model_id",
+                "temperature",
+                "seed",
+                "judge_model",
+                "observed_model_ids",
+                "provider_fingerprints",
+            )
         )
     for scenario in sorted(set(left) | set(right)):
         old, new = left.get(scenario), right.get(scenario)

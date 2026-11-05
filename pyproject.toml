@@ -35,6 +35,7 @@ packages = ["src/llmrt"]
 "corpus/LICENSE" = "llmrt/data/CORPUS-LICENSE"
 "corpus/README.md" = "llmrt/data/CORPUS-README.md"
 "integrations/skills/agent-security-scan" = "llmrt/data/skill"
+"demo_lab/fixtures" = "llmrt/data/fixtures"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

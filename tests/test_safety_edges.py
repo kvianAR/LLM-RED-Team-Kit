@@ -85,16 +85,21 @@ async def test_429_attempts_count_and_writes_require_idempotency(demo, monkeypat
     budget = Budget(config)
     adapter = HTTPAdapter(config, budget)
     calls = 0
+    keys = []
 
-    async def exchange(method, url, payload, dispatch):
+    async def exchange(method, url, payload, dispatch, idempotency_key=None):
         nonlocal calls
         dispatch()
+        keys.append(idempotency_key)
         calls += 1
         return (429, {"retry-after": "0"}, b"{}") if calls == 1 else (200, {}, b"{}")
 
     monkeypatch.setattr(adapter, "_exchange", exchange)
     assert await adapter.request("POST", config.endpoint, {}) == {}
     assert calls == budget.used == 2 and budget.reserved == 0
+    assert keys[0] == keys[1]
+    await adapter.request("POST", config.endpoint, {})
+    assert keys[2] != keys[0]
 
 
 async def test_cancellation_preserves_partial_report(demo, tmp_path, monkeypatch):

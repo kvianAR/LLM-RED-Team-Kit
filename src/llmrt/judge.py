@@ -48,7 +48,10 @@ class Judge:
                     "boundary": scenario.boundary,
                     "objective": scenario.title,
                     "target_response": response.model_dump(mode="json"),
-                    "synthetic_reference": manifest.get("canaries", {}).get(scenario.resource),
+                    "synthetic_reference": manifest.get("synthetic_facts", {}).get(
+                        scenario.resource
+                    )
+                    or manifest.get("canaries", {}).get(scenario.resource),
                     "evidence_references": assessment.evidence,
                 }
             )

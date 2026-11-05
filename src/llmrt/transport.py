@@ -6,6 +6,7 @@ import json
 import socket
 import ssl
 import time
+import uuid
 import zlib
 from contextlib import asynccontextmanager
 from urllib.parse import urljoin, urlsplit
@@ -157,6 +158,7 @@ class HTTPAdapter:
         self.budget = budget
 
     async def request(self, method, url, payload=None):
+        idempotency_key = uuid.uuid4().hex
         visited = set()
         for _ in range(self.config.max_redirects + 1):
             if url in visited:
@@ -168,7 +170,9 @@ class HTTPAdapter:
                     raise BudgetExceeded("Duration budget exhausted")
                 async with asyncio.timeout(timeout):
                     async with self.budget.reserve(model_request=method == "POST") as dispatch:
-                        status, headers, body = await self._exchange(method, url, payload, dispatch)
+                        status, headers, body = await self._exchange(
+                            method, url, payload, dispatch, idempotency_key
+                        )
                 if (
                     status != 429
                     or attempt == self.config.retries
@@ -226,7 +230,7 @@ class HTTPAdapter:
             return result
         raise TransportError("Redirect chain limit exceeded")
 
-    async def _exchange(self, method, url, payload, dispatch):
+    async def _exchange(self, method, url, payload, dispatch, idempotency_key=None):
         parts, address, port = await resolve_address(url, self.config)
         context = None
         if parts.scheme == "https":
@@ -261,12 +265,11 @@ class HTTPAdapter:
                 if any(ord(char) < 32 for char in credential):
                     raise TransportError("Invalid credential characters")
                 headers.append(f"Authorization: Bearer {credential}")
-            if method == "POST" and self.config.idempotency_supported:
-                import hashlib
-
-                headers.append("Idempotency-Key: " + hashlib.sha256(body).hexdigest())
+            if method == "POST" and self.config.idempotency_supported and idempotency_key:
+                headers.append("Idempotency-Key: " + idempotency_key)
+            encoded_request = ("\r\n".join(headers) + "\r\n\r\n").encode("ascii") + body
             dispatch()
-            writer.write(("\r\n".join(headers) + "\r\n\r\n").encode("ascii") + body)
+            writer.write(encoded_request)
             await writer.drain()
             line = await reader.readline()
             if len(line) > 8192:

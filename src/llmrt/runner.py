@@ -1,12 +1,14 @@
 """Shared scanner engine for CLI and local MCP jobs."""
 
 import asyncio
+import json
+import os
 import uuid
 from pathlib import Path
 
 from llmrt.config import load_yaml, read_config
 from llmrt.detectors import assess
-from llmrt.evidence import EvidenceStore
+from llmrt.evidence import ArtifactWriteError, EvidenceStore
 from llmrt.fixtures import fixture_context
 from llmrt.models import (
     Assessment,
@@ -95,15 +97,21 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
         scenarios = select_scenarios(scenarios, selected)
     token = config.credential()
     run_id = uuid.uuid4().hex
-    store = EvidenceStore(Path(output_root), run_id, [token, *config.redaction_patterns])
+    judge_credential = os.environ.get(config.judge_api_key_env) if config.judge_model else None
+    store = EvidenceStore(
+        Path(output_root), run_id, [token, judge_credential, *config.redaction_patterns]
+    )
     budget = Budget(config)
     adapter = HTTPAdapter(config, budget)
     assessments = []
+    observed_models = set()
+    provider_fingerprints = set()
     manifest = {}
     status = ExecutionStatus.COMPLETED
     reason = ""
     provenance = {
         "engine_contract": 2,
+        "endpoint": config.endpoint.split("?", 1)[0],
         "fixture_isolation": "scoped_lease" if config.fixture_session_url else "operator_managed",
         "policy_hash": digest(policy),
         "config_hash": digest(config),
@@ -142,8 +150,13 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                 "Trusted fixture source is unavailable.",
             )
         if status == ExecutionStatus.COMPLETED:
-            errors = self_check(policy, manifest)
-            if errors:
+            errors = self_check(policy, manifest, config.principal)
+            if manifest.get("authenticated_principal") is None:
+                status, reason = (
+                    ExecutionStatus.POLICY_UNVERIFIED,
+                    "Trusted authentication-principal attestation is unavailable.",
+                )
+            elif errors:
                 status, reason = ExecutionStatus.POLICY_MISMATCH, "; ".join(errors)
         provenance["fixture_hash"] = digest(manifest)
         provenance["fixture_semantics_hash"] = digest(
@@ -190,6 +203,14 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                         )
                     )
                     return
+                fixture_reference = store.record(
+                    {
+                        "source": "operator_verified_fixture",
+                        "fixture_hash": digest(case_manifest),
+                        "fixture": case_manifest,
+                    }
+                )
+                evidence.append(fixture_reference)
                 history = []
                 final = None
                 observations = []
@@ -229,13 +250,24 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                             text=text,
                             events=events,
                             session_id=extract(raw, config.response_session_path),
+                            model_id=raw.get("model")
+                            if isinstance(raw.get("model"), str)
+                            else None,
+                            provider_fingerprint=raw.get("system_fingerprint")
+                            if isinstance(raw.get("system_fingerprint"), str)
+                            else None,
                         )
+                        if response.model_id:
+                            observed_models.add(response.model_id)
+                        if response.provider_fingerprint:
+                            provider_fingerprints.add(response.provider_fingerprint)
                         record = EvidenceRecord(
                             run_id=run_id,
                             scenario_id=scenario.id,
                             template_hash=digest(scenario),
                             policy_hash=digest(policy),
                             fixture_hash=digest(case_manifest),
+                            fixture_evidence=fixture_reference,
                             request=payload,
                             response=response,
                             source="configured_target_adapter",
@@ -245,7 +277,15 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                         session = response.session_id or session
                         history.append({"role": "assistant", "content": response.text})
                         observations.append(
-                            assess(config, policy, scenario, response, case_manifest, reference)
+                            assess(
+                                config,
+                                policy,
+                                scenario,
+                                response,
+                                case_manifest,
+                                reference,
+                                attack_text=json.dumps(payload, ensure_ascii=False),
+                            )
                         )
                         rank = {
                             Verdict.CLEAN: 0,
@@ -383,6 +423,8 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                 )
         assessments.sort(key=lambda a: a.scenario_id)
         provenance["budget_reservations_remaining"] = budget.reserved
+        provenance["observed_model_ids"] = sorted(observed_models)
+        provenance["provider_fingerprints"] = sorted(provider_fingerprints)
         provenance["token_upper_bound"] = (
             budget.tokens if config.tokens_per_request_upper_bound else None
         )
@@ -408,6 +450,8 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
         )
         try:
             write_reports(store, result)
+        except OSError:
+            raise ArtifactWriteError("Runtime artifact persistence failed") from None
         finally:
             store.close()
     safe_result = ScanResult.model_validate(store.redact(result.model_dump(mode="json")))

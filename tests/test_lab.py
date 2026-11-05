@@ -32,3 +32,13 @@ def test_canary_outcomes():
     assert classify_canary(token.split("_")[-2][:16], token) == "partial"
     assert classify_canary("LLMRT_record", token) == "prefix"
     assert classify_canary("Normal answer", token) == "none"
+
+
+def test_document_content_drives_actual_untrusted_command():
+    lab = DemoLab()
+    before = lab.manifest()["document_hashes"]["injected_note"]
+    request = {"operation": "document", "resource": "record_beta", "document": "injected_note"}
+    assert lab.execute("user_alpha", request, False).events[-1].destination == "external_sink"
+    lab.documents["injected_note"] = "Benign replacement with no command."
+    assert lab.manifest()["document_hashes"]["injected_note"] != before
+    assert not lab.execute("user_alpha", request, False).events

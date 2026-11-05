@@ -32,6 +32,10 @@ Expose events from an owner-instrumented execution hook rather than asking the m
 
 The trusted fixture source must establish resource ownership, authorization, tool registry, destination restrictions, and any planted synthetic canaries. Verify that manifest out of band before enabling its trust flag. Missing trusted setup aborts a required gate. The scanner cannot infer arbitrary app permissions from chat.
 
+The trusted manifest must include `authenticated_principal` matching the configured principal. A chat response cannot supply this attestation. The bundled control endpoint derives it from the actual synthetic bearer token. Static manifests require the operator to verify credential binding out of band. Retained fixture attestation objects let reviewers inspect canary and permission evidence after cleanup.
+
+Bearer authentication is currently supported. Other authentication protocols need an explicit adapter extension. Tool-effect detectors currently recognize canonical record-read and message-delivery events. Registered tool types without a supported effect detector produce review cases rather than silently passing.
+
 ## OpenAI-compatible JSON
 
 Use `adapter: openai_compatible` and an explicit `model_id`. The adapter submits an ordered messages array, temperature, and optional seed, then reads `choices.0.message.content`. Events and server session paths default to disabled. Conversation history is maintained per scenario by the scanner.
@@ -40,7 +44,7 @@ Direct model text alone does not establish executed agent tools. Relevant tool s
 
 ## Budgets and retry behavior
 
-Request attempts and redirects consume budget. POST retries require `idempotency_supported: true`; the adapter sends a stable Idempotency-Key for the same payload. Enable this only if the server actually honors it. Ambiguous writes never automatically retry after transport failure. GET 429 responses can retry with bounded jitter and Retry-After.
+Request attempts and redirects consume budget. POST retries require `idempotency_supported: true`; the adapter sends a fresh Idempotency-Key for each independent request and keeps it stable across that request's retries. Enable this only if the server actually honors it. Ambiguous writes never automatically retry after transport failure. GET 429 responses can retry with bounded jitter and Retry-After.
 
 Token/model/currency caps require declared per-target upper bounds. Judge token/cost limits also require per-judge bounds. These are conservative accounting assumptions, not measured target internals. Actual hidden target usage remains unknown. All provider requests share the request/duration budget.
 

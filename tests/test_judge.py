@@ -29,7 +29,7 @@ async def test_optional_judge_offline_and_shared_budget(demo, tmp_path, monkeypa
             prompt = json.loads(kwargs["messages"][1]["content"])
             payload = {
                 "verdict": "needs_review",
-                "reason": "Independent trace verification required.",
+                "reason": "Independent trace verification required. synthetic-judge-credential",
                 "evidence_references": prompt["evidence_references"],
             }
             return SimpleNamespace(
@@ -48,11 +48,12 @@ async def test_optional_judge_offline_and_shared_budget(demo, tmp_path, monkeypa
         root / "vulnerable.yaml", tmp_path / "runs", ["forbidden_destination"]
     )
     assert result.assessments[0].verdict == Verdict.REVIEW
-    assert len(result.assessments[0].evidence) == 2
+    assert len(result.assessments[0].evidence) == 3
     assert len(calls) == result.model_calls == 1
     assert result.requests == 5
     assert "tools" not in calls[0]
     assert "synthetic-judge-credential" not in json.dumps(calls)
+    assert "synthetic-judge-credential" not in result.model_dump_json()
 
 
 async def test_missing_judge_key_is_explicit_inconclusive(demo, tmp_path, monkeypatch):

@@ -4,8 +4,10 @@ from llmrt.canary import valid_canary
 from llmrt.models import Assertion, Policy
 
 
-def self_check(policy: Policy, manifest: dict) -> list[str]:
+def self_check(policy: Policy, manifest: dict, principal=None) -> list[str]:
     errors = []
+    if principal is not None and manifest.get("authenticated_principal") != principal:
+        errors.append("Verified authentication identity differs from configured principal")
     canaries = manifest.get("canaries", {})
     if not isinstance(canaries, dict) or any(
         not valid_canary(value) for value in canaries.values()

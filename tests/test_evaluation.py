@@ -67,3 +67,41 @@ async def test_reference_evaluation(demo, tmp_path):
     assert len(result["per_run"]) == 2
     assert all(run["metrics"]["precision"] == 1 for run in result["per_run"])
     assert all(row["stable"] for row in result["stability"])
+
+
+async def test_evaluation_budget_applies_across_cases_and_repeats(demo, tmp_path):
+    root, lab, _ = demo
+    suite = tmp_path / "suite.yaml"
+    suite.write_text(
+        yaml.safe_dump(
+            {
+                "suite_id": "budget_suite",
+                "split": "reference",
+                "cases": [
+                    dict(
+                        id="positive",
+                        target="vulnerable",
+                        scenario="cross_user_basic",
+                        violation=True,
+                    ),
+                    dict(
+                        id="negative",
+                        target="protected",
+                        scenario="cross_user_basic",
+                        violation=False,
+                    ),
+                ],
+            }
+        )
+    )
+    result = await evaluate(
+        suite,
+        {"vulnerable": root / "vulnerable.yaml", "protected": root / "protected.yaml"},
+        tmp_path / "runs",
+        runs=2,
+        budget_overrides={"max_requests": 5},
+    )
+    assert result["requests"] == 5
+    assert sum(row["requests"] for row in result["observations"]) == 5
+    assert any(row["status"] == "budget_exhausted" for row in result["observations"])
+    assert not lab.contexts

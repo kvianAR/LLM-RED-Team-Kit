@@ -50,13 +50,13 @@ boundaries:
     severity: high
 ```
 
-The self-check compares this policy against an independently supplied fixture manifest. A global disagreement aborts with `policy_mismatch`. Target chat output cannot establish ground truth. Unavailable fixture verification stays explicit and does not pass a required gate.
+The self-check compares this policy against an independently supplied fixture manifest. Its `authenticated_principal` must attest the identity bound to the target credential. A mismatch aborts before attack execution with `policy_mismatch`; a missing identity attestation is `policy_unverified`. Target chat output cannot establish ground truth. Operator-supplied static manifests require out-of-band credential/identity verification.
 
 ## 2. Identity and fingerprint rules
 
 Logical IDs match `^[a-z][a-z0-9_]{2,63}$`. IDs are unique within their entity type. Resource ownership references a declared principal. Fingerprints include version, target logical ID, scenario ID, boundary ID, requesting role, ownership relationship, logical resource ID, evidence class, and sorted relevant capabilities. Canonical JSON uses sorted keys, UTF-8, compact separators, and rejects non-finite values. SHA-256 produces the fingerprint.
 
-Role alone does not identify a user boundary. The `self`, `other`, or `shared` relationship remains explicit. Random canaries, timestamps, and session identifiers are excluded. Template bytes, policy bytes, fixture bytes, and evidence bytes have separate provenance hashes. An individual assessment ID remains distinct from its finding fingerprint.
+Role alone does not identify a user boundary. The `self`, `other`, or `shared` relationship remains explicit. Random canaries, timestamps, and session identifiers are excluded. Template and policy hashes identify their validated canonical JSON contracts. Fixture hashes identify canonical manifest content. Frozen suite file hashes cover the original file bytes. Stored evidence hashes address redacted canonical bytes. An individual assessment ID remains distinct from its finding fingerprint.
 
 ## 3. Assertion types
 
@@ -85,6 +85,8 @@ Events identify source, principal, tool, resource or destination, phase (`propos
 Stored records contain run/scenario IDs, timestamp, source, template/policy/fixture hashes, and redacted request/response/events. Redaction happens before storage. The digest addresses stored redacted bytes. Files are created exclusively with mode 0600 inside a private run directory. Existing evidence objects are verified before reuse. Manifests are append-only. A local filesystem owner can still modify artifacts.
 
 Replay uses a credential-reference and fixture recipe. It does not retain real credentials. Synthetic canaries may be retained as deliberately public test evidence. Real target secrets require explicit configured redaction patterns.
+
+Each case retains a redacted content-addressed fixture attestation before interacting with the target. Response evidence links that object through `fixture_evidence`. This retains the protected-canary reference, permission truth, authenticated principal, document hashes, and scoped identity needed to independently inspect the result. Per-case fixture hashes are distinct from stable fixture semantics used in baseline comparison.
 
 ## 6. Exit codes and gates
 

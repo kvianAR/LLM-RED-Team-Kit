@@ -15,6 +15,18 @@ def test_policy_gate():
     assert self_check(lab.policy, manifest)
 
 
+async def test_wrong_credential_identity_aborts_before_attack(demo, tmp_path, monkeypatch):
+    from llmrt.reporting import exit_code
+    from llmrt.runner import run_scan
+
+    root, lab, _ = demo
+    monkeypatch.setenv("LLMRT_DEMO_TOKEN", "demo-beta")
+    result, _ = await run_scan(root / "vulnerable.yaml", tmp_path / "runs")
+    assert result.execution_status == "policy_mismatch"
+    assert exit_code(result) == 2
+    assert not lab.effects and not lab.contexts
+
+
 def test_assertion_states_and_boolean_type():
     assertion = Assertion(check="resource_owner", subject="record_beta", equals="user_beta")
     assert assert_fixture(assertion, {}, True) == "unavailable"

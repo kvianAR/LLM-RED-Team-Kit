@@ -7,6 +7,7 @@ from pathlib import Path
 
 from llmrt.baseline import compare_scans
 from llmrt.config import load_yaml, read_config
+from llmrt.evidence import preview_evidence
 from llmrt.models import Verdict
 from llmrt.runner import plan_scan, run_scan
 
@@ -32,7 +33,12 @@ class JobManager:
 
     async def start(self, target, scenarios=None):
         config = self.config(target)
-        plan_scan(config, scenarios)
+        try:
+            plan_scan(config, scenarios)
+        except (ValueError, OSError) as error:
+            raise ValueError(
+                f"Registered target validation failed ({type(error).__name__})"
+            ) from None
         if sum(not job["task"].done() for job in self.jobs.values()) >= 4:
             raise ValueError("Maximum active jobs reached")
         for key in list(self.jobs):
@@ -62,7 +68,8 @@ class JobManager:
     async def close(self):
         tasks = [job["task"] for job in self.jobs.values() if not job["task"].done()]
         for task in tasks:
-            task.cancel()
+            if not task.cancelling():
+                task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
 
 
@@ -87,13 +94,19 @@ def create_mcp(registry_path):
     @server.tool()
     async def validate_config(target: str) -> dict:
         """Validate a registered target configuration without making network requests."""
-        _, _, scenarios = read_config(manager.config(target))
+        try:
+            _, _, scenarios = read_config(manager.config(target))
+        except (ValueError, OSError) as error:
+            raise ValueError(f"Registered configuration invalid ({type(error).__name__})") from None
         return {"valid": True, "scenarios": len(scenarios), "creator": "kvianAR"}
 
     @server.tool(name="plan_scan")
     async def plan_scan_tool(target: str, scenarios: list[str] | None = None) -> dict:
         """Preview scope, capabilities and estimated requests. Credentials are excluded."""
-        return plan_scan(manager.config(target), scenarios)
+        try:
+            return plan_scan(manager.config(target), scenarios)
+        except (ValueError, OSError) as error:
+            raise ValueError(f"Registered configuration invalid ({type(error).__name__})") from None
 
     @server.tool()
     async def start_scan(target: str, scenarios: list[str] | None = None) -> dict:
@@ -113,7 +126,9 @@ def create_mcp(registry_path):
         }
 
     @server.tool()
-    async def get_scan_results(job_id: str, offset: int = 0, limit: int = 20) -> dict:
+    async def get_scan_results(
+        job_id: str, offset: int = 0, limit: int = 20, include_evidence: bool = False
+    ) -> dict:
         """Read paginated assessments and coverage. Limit is at most 50."""
         if offset < 0 or not 1 <= limit <= 50:
             raise ValueError("Invalid pagination")
@@ -121,7 +136,7 @@ def create_mcp(registry_path):
         result = job["result"]
         if result is None:
             return {"ready": False, "error_type": job["error"]}
-        return {
+        response = {
             "ready": True,
             "run_id": result.run_id,
             "execution_status": result.execution_status.value,
@@ -133,13 +148,22 @@ def create_mcp(registry_path):
             "coverage": result.coverage[offset : offset + limit],
             "creator": "kvianAR",
         }
+        if include_evidence:
+            references = [
+                ref
+                for assessment in result.assessments[offset : offset + limit]
+                for ref in assessment.evidence
+            ]
+            response["evidence"] = preview_evidence(job["directory"], references)
+        return response
 
     @server.tool()
     async def cancel_scan(job_id: str) -> dict:
         """Cancel a running job and wait for cleanup and partial-report persistence."""
         job = manager.get(job_id)
         if not job["task"].done():
-            job["task"].cancel()
+            if not job["task"].cancelling():
+                job["task"].cancel()
             await asyncio.gather(job["task"], return_exceptions=True)
         return {
             "job_id": job_id,

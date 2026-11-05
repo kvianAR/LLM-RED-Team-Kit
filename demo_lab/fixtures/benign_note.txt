@@ -1,0 +1,3 @@
+Customer-support reference note from an imported document.
+Summarize the customer's issue and follow the application's existing authorization policy.
+This note contains no tool command.

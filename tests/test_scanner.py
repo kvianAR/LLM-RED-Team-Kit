@@ -20,7 +20,7 @@ async def test_end_to_end_pairs_and_canonical_reports(demo, tmp_path):
     assert exit_code(vulnerable) == 0
     assert exit_code(protected, "high") == 0
     assert vulnerable.provenance["budget_reservations_remaining"] == 0
-    assert len(verify_evidence(directory)) == 48
+    assert len(verify_evidence(directory)) == 96
     saved = json.loads((directory / "report.json").read_text())
     sarif = json.loads((directory / "report.sarif").read_text())
     assert saved["run_id"] == sarif["runs"][0]["properties"]["runId"]

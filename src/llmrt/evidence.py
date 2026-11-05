@@ -4,11 +4,19 @@ import hashlib
 import json
 import os
 import re
+import stat
 from pathlib import Path
 
 from llmrt.models import canonical_bytes
 
 SENSITIVE_KEYS = {"authorization", "password", "api_key", "access_token", "bearer_token"}
+SENSITIVE_KEYS.update(
+    {"token", "refresh_token", "client_secret", "secret_key", "cookie", "set-cookie"}
+)
+
+
+class ArtifactWriteError(RuntimeError):
+    """Runtime artifact failure, distinct from invalid operator configuration."""
 
 
 class EvidenceStore:
@@ -95,3 +103,41 @@ def verify_evidence(directory: Path):
                 raise ValueError("Evidence digest mismatch")
             entries.append(entry["digest"])
     return entries
+
+
+def preview_evidence(directory: Path, references, max_chars=16000):
+    result = {}
+    remaining = max_chars
+    directory_fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        for reference in dict.fromkeys(references):
+            if remaining <= 0:
+                break
+            if not re.fullmatch(r"[a-f0-9]{64}", reference):
+                raise ValueError("Invalid evidence reference")
+            descriptor = os.open(
+                reference + ".json",
+                os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+                dir_fd=directory_fd,
+            )
+            with os.fdopen(descriptor, "rb") as stream:
+                info = os.fstat(stream.fileno())
+                if not stat.S_ISREG(info.st_mode) or info.st_size > 2097152:
+                    result[reference] = {
+                        "preview": None,
+                        "reason": "Artifact exceeds bounded preview",
+                    }
+                    continue
+                content = stream.read(2097153)
+            if hashlib.sha256(content).hexdigest() != reference:
+                raise ValueError("Evidence content digest mismatch")
+            text = content.decode("utf-8")
+            excerpt = text[: min(4000, remaining)]
+            remaining -= len(excerpt)
+            result[reference] = {
+                "untrusted_redacted_content": excerpt,
+                "truncated": len(excerpt) != len(text),
+            }
+    finally:
+        os.close(directory_fd)
+    return result

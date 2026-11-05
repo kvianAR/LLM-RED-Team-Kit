@@ -6,6 +6,12 @@ An agent tool-authorization and data-boundary scanner using declarative policy, 
 
 The terminal CLI, local stdio MCP server, and Claude/Codex skill share one scanner engine. Judge use is optional and off by default.
 
+## Demo
+
+![60-second local CLI demonstration](outputs/terminal-demo.gif)
+
+This is an illustrated replay of actual local CLI outputs, with a generated assessment excerpt. The complete terminal cast is [included](outputs/terminal-demo.cast). Fixtures and credentials shown are synthetic. It demonstrates scanner behavior rather than real-model efficacy.
+
 ## Quickstart
 
 Requires Python 3.11+ and uv. The current filesystem implementation supports macOS/Linux. Windows has not been validated.
@@ -93,7 +99,7 @@ The reusable action is `.github/actions/scan`. Its credentials come from the cal
 
 ```bash
 uv run llmrt check-splits evaluation/development.yaml evaluation/validation.yaml evaluation/reference.yaml
-uv run llmrt evaluate --suite evaluation/reference.yaml --config examples/demo/vulnerable.yaml --protected-config examples/demo/protected.yaml --output scan-results/evaluation --runs 3
+uv run llmrt evaluate --suite evaluation/reference.yaml --config examples/demo/vulnerable.yaml --protected-config examples/demo/protected.yaml --output scan-results/evaluation --runs 3 --max-requests 1000
 uv run pytest -q
 uv build
 ```

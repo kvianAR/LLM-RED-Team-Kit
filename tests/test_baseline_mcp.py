@@ -104,8 +104,11 @@ async def test_real_stdio_mcp_roundtrip(demo, tmp_path):
                 if json.loads(status.content[0].text)["status"] != "running":
                     break
                 await asyncio.sleep(0.02)
-            results = await session.call_tool("get_scan_results", {"job_id": job})
+            results = await session.call_tool(
+                "get_scan_results", {"job_id": job, "include_evidence": True}
+            )
             data = json.loads(results.content[0].text)
             assert data["ready"] and data["assessments"][0]["verdict"] == "no_violation_observed"
+            assert len(data["evidence"]) == 2
             bad = await session.call_tool("get_scan_results", {"job_id": job, "limit": 100})
             assert bad.isError

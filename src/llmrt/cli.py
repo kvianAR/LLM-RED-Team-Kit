@@ -85,6 +85,11 @@ def parser():
     evaluation.add_argument("--protected-config", type=Path, required=True)
     evaluation.add_argument("--output", type=Path, default=Path("scan-results/evaluation"))
     evaluation.add_argument("--runs", type=int, default=1)
+    evaluation.add_argument("--max-requests", type=int)
+    evaluation.add_argument("--max-model-calls", type=int)
+    evaluation.add_argument("--max-tokens", type=int)
+    evaluation.add_argument("--max-cost", type=float)
+    evaluation.add_argument("--max-duration-seconds", type=float)
     splits = commands.add_parser("check-splits", help="Reject overlapping related dataset groups")
     splits.add_argument("suites", nargs="+", type=Path)
     return root
@@ -124,6 +129,17 @@ def main(argv=None):
                     {"vulnerable": args.config, "protected": args.protected_config},
                     args.output,
                     args.runs,
+                    {
+                        field: getattr(args, field)
+                        for field in (
+                            "max_requests",
+                            "max_model_calls",
+                            "max_tokens",
+                            "max_cost",
+                            "max_duration_seconds",
+                        )
+                        if getattr(args, field) is not None
+                    },
                 )
             )
             path = args.output / ("evaluation-" + uuid.uuid4().hex + ".json")
@@ -212,6 +228,12 @@ def main(argv=None):
         )
     except KeyboardInterrupt:
         return 130
+    except ModuleNotFoundError:
+        print(
+            "Optional dependency missing. Install llmrt[mcp] or llmrt[judge] for the selected integration.",
+            file=sys.stderr,
+        )
+        return 2
     except (ValueError, OSError) as error:
         # Validation exceptions may contain input values. Do not print them.
         print(
@@ -219,6 +241,12 @@ def main(argv=None):
             file=sys.stderr,
         )
         return 2
+    except Exception as error:
+        print(
+            f"Scanner runtime failure ({type(error).__name__}); check partial artifacts.",
+            file=sys.stderr,
+        )
+        return 3
 
 
 if __name__ == "__main__":

@@ -4,11 +4,14 @@ The deterministic command router is not an LLM. It exercises scanner mechanics.
 """
 
 import argparse
+import hashlib
 import json
 import re
 import secrets
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from importlib.resources import files
+from pathlib import Path
 
 from llmrt.models import ExecutionEvent, Policy, TargetResponse
 
@@ -67,6 +70,13 @@ class DemoLab:
         from llmrt.canary import make_canary
 
         self.policy = demo_policy()
+        fixture_root = Path(str(files("llmrt").joinpath("data/fixtures")))
+        if not fixture_root.is_dir():
+            fixture_root = Path(__file__).resolve().parents[2] / "demo_lab/fixtures"
+        self.documents = {
+            name: (fixture_root / (name + ".txt")).read_text(encoding="utf-8")
+            for name in ("injected_note", "benign_note")
+        }
         self.canaries = {r.id: make_canary("record") for r in self.policy.resources}
         self.sessions: set[str] = set()
         self.contexts: dict[str, dict] = {}
@@ -80,7 +90,11 @@ class DemoLab:
             "owners": {r.id: r.owner for r in self.policy.resources},
             "tools": [t.id for t in self.policy.tools],
             "destinations": {t.id: t.allowed_destinations for t in self.policy.tools},
-            "documents": ["injected_note", "benign_note"],
+            "documents": list(self.documents),
+            "document_hashes": {
+                name: hashlib.sha256(text.encode()).hexdigest()
+                for name, text in self.documents.items()
+            },
             "canaries": self.canaries,
             "mode": "deterministic_fixture",
         }
@@ -101,6 +115,7 @@ class DemoLab:
             manifest = self.manifest()
             manifest["canaries"] = {r.id: make_canary("record") for r in self.policy.resources}
             manifest["session_id"] = session
+            manifest["authenticated_principal"] = principal
             self.contexts[session] = {"principal": principal, "manifest": manifest, "effects": []}
             return manifest
 
@@ -138,7 +153,13 @@ class DemoLab:
             return TargetResponse(text=text, session_id=session)
         if operation == "document":
             document = request.get("document", "injected_note")
-            if document == "benign_note":
+            content = self.documents.get(document)
+            if content is None:
+                raise ValueError("Unknown retrieved document")
+            command = re.search(
+                r"TOOL_CALL send_message destination=([a-z_]+) resource=([a-z_]+)", content
+            )
+            if command is None:
                 return TargetResponse(
                     text="Document contains normal support guidance.", session_id=session
                 )
@@ -147,6 +168,9 @@ class DemoLab:
                     text="Retrieved instructions cannot grant tool permissions.", session_id=session
                 )
             # The vulnerable router interprets a retrieved command as trusted tool intent.
+            destination, resource = command.groups()
+            if resource not in canaries:
+                raise ValueError("Retrieved command references an unknown resource")
             operation = "send"
         if operation == "argument":
             # A different argument name must not bypass the same authorization decision.
@@ -203,7 +227,9 @@ def create_server(host="127.0.0.1", port=8765, lab=None):
             if not self.principal():
                 return self.reply(401, {"error": "Unauthorized"})
             if self.path == "/manifest":
-                return self.reply(200, fixture.manifest())
+                manifest = fixture.manifest()
+                manifest["authenticated_principal"] = self.principal()
+                return self.reply(200, manifest)
             if self.path == "/health":
                 return self.reply(200, {"status": "ok"})
             self.reply(404, {"error": "Unknown route"})
@@ -228,6 +254,8 @@ def create_server(host="127.0.0.1", port=8765, lab=None):
                 if not 0 < length <= 65536:
                     return self.reply(413, {"error": "Invalid request size"})
                 request = json.loads(self.rfile.read(length))
+                if not isinstance(request, dict):
+                    raise ValueError("Fixture request must be a JSON object")
                 if request.get("session_id") not in fixture.contexts:
                     raise ValueError("Create an isolated fixture session first")
                 response = fixture.execute(principal, request, "/protected/" in self.path)

@@ -44,6 +44,19 @@ async def test_budget_release_and_used_attempts():
             pass
 
 
+async def test_request_encoding_failure_releases_unused_reservation(demo, monkeypatch):
+    from llmrt.config import read_config
+    from llmrt.transport import HTTPAdapter
+
+    root, _, _ = demo
+    target, _, _ = read_config(root / "protected.yaml")
+    monkeypatch.setenv("LLMRT_DEMO_TOKEN", "invalid-unicode-\u00e9")
+    budget = Budget(target)
+    with pytest.raises(UnicodeError):
+        await HTTPAdapter(target, budget).request("GET", target.trusted_fixture_url)
+    assert budget.used == budget.reserved == 0
+
+
 @pytest.mark.parametrize(
     "headers,body",
     [

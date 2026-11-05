@@ -31,6 +31,13 @@ UniqueLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, uni
 
 
 def load_yaml(path: Path):
+    try:
+        return _load_yaml(path)
+    except (yaml.YAMLError, UnicodeError, RecursionError):
+        raise ValueError("Malformed or excessively complex YAML") from None
+
+
+def _load_yaml(path: Path):
     with path.open("rb") as stream:
         raw = stream.read(131073)
     if len(raw) > 131072:

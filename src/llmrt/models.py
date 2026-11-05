@@ -179,6 +179,8 @@ class TargetResponse(Model):
     text: str
     events: list[ExecutionEvent] = Field(default_factory=list)
     session_id: str | None = None
+    model_id: str | None = None
+    provider_fingerprint: str | None = None
 
 
 class EvidenceRecord(Model):
@@ -189,6 +191,7 @@ class EvidenceRecord(Model):
     template_hash: str
     policy_hash: str
     fixture_hash: str
+    fixture_evidence: str | None = None
     request: dict
     response: TargetResponse
     source: str
