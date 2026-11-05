@@ -19,7 +19,12 @@ def compare_scans(before, after, purpose="retest"):
     results = []
     left = {a.scenario_id: a for a in before.assessments}
     right = {a.scenario_id: a for a in after.assessments}
-    shared_keys = ("policy_hash", "fixture_semantics_hash", "trace_verified_by_operator")
+    shared_keys = (
+        "policy_hash",
+        "fixture_semantics_hash",
+        "trace_verified_by_operator",
+        "engine_contract",
+    )
     global_compatible = (
         before.target == after.target
         and before.fingerprint_version == after.fingerprint_version

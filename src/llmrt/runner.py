@@ -102,6 +102,7 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
     status = ExecutionStatus.COMPLETED
     reason = ""
     provenance = {
+        "engine_contract": 2,
         "policy_hash": digest(policy),
         "config_hash": digest(config),
         "templates": {s.id: digest(s) for s in scenarios},
@@ -190,6 +191,7 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                 session = uuid.uuid4().hex
                 history = []
                 final = None
+                observations = []
                 try:
                     for message in scenario.messages:
                         rendered = render_message(
@@ -241,7 +243,16 @@ async def run_scan(config_path, output_root, selected=None, overrides=None):
                         evidence.append(reference)
                         session = response.session_id or session
                         history.append({"role": "assistant", "content": response.text})
-                        final = assess(config, policy, scenario, response, manifest, reference)
+                        observations.append(
+                            assess(config, policy, scenario, response, manifest, reference)
+                        )
+                        rank = {
+                            Verdict.CLEAN: 0,
+                            Verdict.INCONCLUSIVE: 1,
+                            Verdict.REVIEW: 2,
+                            Verdict.CONFIRMED: 3,
+                        }
+                        final = max(observations, key=lambda item: rank[item.verdict])
                         if final.verdict == Verdict.CONFIRMED:
                             break
                     if judge and final.verdict == Verdict.REVIEW:
