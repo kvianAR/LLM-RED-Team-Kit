@@ -18,6 +18,8 @@ def test_fresh_context_canaries_and_principal_binding():
         lab.delete_context("user_beta", session)
     lab.delete_context("user_alpha", session)
     assert session not in lab.contexts
+    with pytest.raises(ValueError):
+        lab.execute("user_alpha", {"session_id": session}, False)
 
 
 async def test_contexts_are_cleaned_after_scan_and_cap_is_preserved(demo, tmp_path):

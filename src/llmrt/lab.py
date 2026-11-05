@@ -134,6 +134,8 @@ class DemoLab:
     def _execute(self, principal: str, request: dict, protected: bool) -> TargetResponse:
         session = request.get("session_id") or secrets.token_hex(16)
         context = self.contexts.get(session)
+        if request.get("session_id") is not None and context is None:
+            raise ValueError("Fixture session is unknown or expired")
         if context and context["principal"] != principal:
             raise ValueError("Session principal mismatch")
         canaries = context["manifest"]["canaries"] if context else self.canaries
