@@ -1,0 +1,557 @@
+{
+  "suite_id": "local_reference",
+  "suite_hash": "44bab18460db295b103193939d5310128e571e65014865dc875d7b059b40ce02",
+  "split": "reference",
+  "scope": "Public deterministic scanner regression fixtures; not a model efficacy benchmark.",
+  "independently_authored": false,
+  "unique_cases": 32,
+  "unique_groups": 2,
+  "runs": 3,
+  "per_run": [
+    {
+      "repeat": 1,
+      "metrics": {
+        "counts": {
+          "total": 32,
+          "applicable": 32,
+          "positive": 8,
+          "negative": 24,
+          "TP": 8,
+          "FP": 0,
+          "TN": 24,
+          "FN_decided": 0,
+          "U_positive": 0,
+          "U_negative": 0,
+          "unsupported": 0,
+          "unknown_labels": 0
+        },
+        "precision": 1.0,
+        "observed_recall": 1.0,
+        "observed_fpr": 0.0,
+        "conditional_fpr": 0.0,
+        "negative_decision_coverage": 1.0,
+        "inconclusive_rate": 0.0,
+        "execution_coverage": 1.0,
+        "precision_wilson_95": [
+          0.6755924351161198,
+          1
+        ],
+        "recall_wilson_95": [
+          0.6755924351161198,
+          1
+        ],
+        "fpr_wilson_95": [
+          1.3877787807814457e-17,
+          0.13797620467498017
+        ]
+      },
+      "per_family": {
+        "context_disclosure": {
+          "counts": {
+            "total": 16,
+            "applicable": 16,
+            "positive": 4,
+            "negative": 12,
+            "TP": 4,
+            "FP": 0,
+            "TN": 12,
+            "FN_decided": 0,
+            "U_positive": 0,
+            "U_negative": 0,
+            "unsupported": 0,
+            "unknown_labels": 0
+          },
+          "precision": 1.0,
+          "observed_recall": 1.0,
+          "observed_fpr": 0.0,
+          "conditional_fpr": 0.0,
+          "negative_decision_coverage": 1.0,
+          "inconclusive_rate": 0.0,
+          "execution_coverage": 1.0,
+          "precision_wilson_95": [
+            0.5101091635454027,
+            1
+          ],
+          "recall_wilson_95": [
+            0.5101091635454027,
+            1
+          ],
+          "fpr_wilson_95": [
+            2.7755575615628914e-17,
+            0.24249400665524085
+          ]
+        },
+        "indirect_injection": {
+          "counts": {
+            "total": 16,
+            "applicable": 16,
+            "positive": 4,
+            "negative": 12,
+            "TP": 4,
+            "FP": 0,
+            "TN": 12,
+            "FN_decided": 0,
+            "U_positive": 0,
+            "U_negative": 0,
+            "unsupported": 0,
+            "unknown_labels": 0
+          },
+          "precision": 1.0,
+          "observed_recall": 1.0,
+          "observed_fpr": 0.0,
+          "conditional_fpr": 0.0,
+          "negative_decision_coverage": 1.0,
+          "inconclusive_rate": 0.0,
+          "execution_coverage": 1.0,
+          "precision_wilson_95": [
+            0.5101091635454027,
+            1
+          ],
+          "recall_wilson_95": [
+            0.5101091635454027,
+            1
+          ],
+          "fpr_wilson_95": [
+            2.7755575615628914e-17,
+            0.24249400665524085
+          ]
+        }
+      }
+    },
+    {
+      "repeat": 2,
+      "metrics": {
+        "counts": {
+          "total": 32,
+          "applicable": 32,
+          "positive": 8,
+          "negative": 24,
+          "TP": 8,
+          "FP": 0,
+          "TN": 24,
+          "FN_decided": 0,
+          "U_positive": 0,
+          "U_negative": 0,
+          "unsupported": 0,
+          "unknown_labels": 0
+        },
+        "precision": 1.0,
+        "observed_recall": 1.0,
+        "observed_fpr": 0.0,
+        "conditional_fpr": 0.0,
+        "negative_decision_coverage": 1.0,
+        "inconclusive_rate": 0.0,
+        "execution_coverage": 1.0,
+        "precision_wilson_95": [
+          0.6755924351161198,
+          1
+        ],
+        "recall_wilson_95": [
+          0.6755924351161198,
+          1
+        ],
+        "fpr_wilson_95": [
+          1.3877787807814457e-17,
+          0.13797620467498017
+        ]
+      },
+      "per_family": {
+        "context_disclosure": {
+          "counts": {
+            "total": 16,
+            "applicable": 16,
+            "positive": 4,
+            "negative": 12,
+            "TP": 4,
+            "FP": 0,
+            "TN": 12,
+            "FN_decided": 0,
+            "U_positive": 0,
+            "U_negative": 0,
+            "unsupported": 0,
+            "unknown_labels": 0
+          },
+          "precision": 1.0,
+          "observed_recall": 1.0,
+          "observed_fpr": 0.0,
+          "conditional_fpr": 0.0,
+          "negative_decision_coverage": 1.0,
+          "inconclusive_rate": 0.0,
+          "execution_coverage": 1.0,
+          "precision_wilson_95": [
+            0.5101091635454027,
+            1
+          ],
+          "recall_wilson_95": [
+            0.5101091635454027,
+            1
+          ],
+          "fpr_wilson_95": [
+            2.7755575615628914e-17,
+            0.24249400665524085
+          ]
+        },
+        "indirect_injection": {
+          "counts": {
+            "total": 16,
+            "applicable": 16,
+            "positive": 4,
+            "negative": 12,
+            "TP": 4,
+            "FP": 0,
+            "TN": 12,
+            "FN_decided": 0,
+            "U_positive": 0,
+            "U_negative": 0,
+            "unsupported": 0,
+            "unknown_labels": 0
+          },
+          "precision": 1.0,
+          "observed_recall": 1.0,
+          "observed_fpr": 0.0,
+          "conditional_fpr": 0.0,
+          "negative_decision_coverage": 1.0,
+          "inconclusive_rate": 0.0,
+          "execution_coverage": 1.0,
+          "precision_wilson_95": [
+            0.5101091635454027,
+            1
+          ],
+          "recall_wilson_95": [
+            0.5101091635454027,
+            1
+          ],
+          "fpr_wilson_95": [
+            2.7755575615628914e-17,
+            0.24249400665524085
+          ]
+        }
+      }
+    },
+    {
+      "repeat": 3,
+      "metrics": {
+        "counts": {
+          "total": 32,
+          "applicable": 32,
+          "positive": 8,
+          "negative": 24,
+          "TP": 8,
+          "FP": 0,
+          "TN": 24,
+          "FN_decided": 0,
+          "U_positive": 0,
+          "U_negative": 0,
+          "unsupported": 0,
+          "unknown_labels": 0
+        },
+        "precision": 1.0,
+        "observed_recall": 1.0,
+        "observed_fpr": 0.0,
+        "conditional_fpr": 0.0,
+        "negative_decision_coverage": 1.0,
+        "inconclusive_rate": 0.0,
+        "execution_coverage": 1.0,
+        "precision_wilson_95": [
+          0.6755924351161198,
+          1
+        ],
+        "recall_wilson_95": [
+          0.6755924351161198,
+          1
+        ],
+        "fpr_wilson_95": [
+          1.3877787807814457e-17,
+          0.13797620467498017
+        ]
+      },
+      "per_family": {
+        "context_disclosure": {
+          "counts": {
+            "total": 16,
+            "applicable": 16,
+            "positive": 4,
+            "negative": 12,
+            "TP": 4,
+            "FP": 0,
+            "TN": 12,
+            "FN_decided": 0,
+            "U_positive": 0,
+            "U_negative": 0,
+            "unsupported": 0,
+            "unknown_labels": 0
+          },
+          "precision": 1.0,
+          "observed_recall": 1.0,
+          "observed_fpr": 0.0,
+          "conditional_fpr": 0.0,
+          "negative_decision_coverage": 1.0,
+          "inconclusive_rate": 0.0,
+          "execution_coverage": 1.0,
+          "precision_wilson_95": [
+            0.5101091635454027,
+            1
+          ],
+          "recall_wilson_95": [
+            0.5101091635454027,
+            1
+          ],
+          "fpr_wilson_95": [
+            2.7755575615628914e-17,
+            0.24249400665524085
+          ]
+        },
+        "indirect_injection": {
+          "counts": {
+            "total": 16,
+            "applicable": 16,
+            "positive": 4,
+            "negative": 12,
+            "TP": 4,
+            "FP": 0,
+            "TN": 12,
+            "FN_decided": 0,
+            "U_positive": 0,
+            "U_negative": 0,
+            "unsupported": 0,
+            "unknown_labels": 0
+          },
+          "precision": 1.0,
+          "observed_recall": 1.0,
+          "observed_fpr": 0.0,
+          "conditional_fpr": 0.0,
+          "negative_decision_coverage": 1.0,
+          "inconclusive_rate": 0.0,
+          "execution_coverage": 1.0,
+          "precision_wilson_95": [
+            0.5101091635454027,
+            1
+          ],
+          "recall_wilson_95": [
+            0.5101091635454027,
+            1
+          ],
+          "fpr_wilson_95": [
+            2.7755575615628914e-17,
+            0.24249400665524085
+          ]
+        }
+      }
+    }
+  ],
+  "stability": [
+    {
+      "case": "disclose_allowed_01_vulnerable",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_allowed_01_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_allowed_02_vulnerable",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_allowed_02_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_allowed_03_vulnerable",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_allowed_03_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_allowed_04_vulnerable",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_allowed_04_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_forbidden_02_vulnerable",
+      "confirmations": 3,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_forbidden_02_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_forbidden_03_vulnerable",
+      "confirmations": 3,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_forbidden_03_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_forbidden_04_vulnerable",
+      "confirmations": 3,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "disclose_forbidden_04_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_allowed_01_vulnerable",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_allowed_01_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_allowed_02_vulnerable",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_allowed_02_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_allowed_03_vulnerable",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_allowed_03_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_allowed_04_vulnerable",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_allowed_04_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_forbidden_02_vulnerable",
+      "confirmations": 3,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_forbidden_02_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_forbidden_03_vulnerable",
+      "confirmations": 3,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_forbidden_03_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_forbidden_04_vulnerable",
+      "confirmations": 3,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "document_forbidden_04_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "protected_context_read_vulnerable",
+      "confirmations": 3,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "protected_context_read_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "retrieved_tool_command_vulnerable",
+      "confirmations": 3,
+      "runs": 3,
+      "stable": true
+    },
+    {
+      "case": "retrieved_tool_command_protected",
+      "confirmations": 0,
+      "runs": 3,
+      "stable": true
+    }
+  ],
+  "interval_note": "Per-run Wilson intervals assume independent cases. Related variants can violate that assumption; group counts are provided. Repeated runs are not pooled as independent cases.",
+  "creator": "kvianAR",
+  "budget_scope": "entire_evaluation_command",
+  "budget_limits": {
+    "max_requests": 1000,
+    "max_model_calls": null,
+    "max_tokens": null,
+    "max_cost": null,
+    "max_duration_seconds": 300
+  },
+  "requests": 384,
+  "elapsed_seconds": 15.252703791000386,
+  "verification": {
+    "python_311_tests": 60,
+    "python_312_tests": 60,
+    "mcp_protocol": "local stdio roundtrip including bounded evidence verified",
+    "scanner_live_llm_provider_calls": 0,
+    "external_targets_scanned": 0,
+    "skill_client_discovery": "unverified",
+    "github_workflow": "OAuth workflow scope required"
+  }
+}

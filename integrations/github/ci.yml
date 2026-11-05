@@ -17,7 +17,7 @@ jobs:
         with:
           version: '0.13.6'
           python-version: ${{ matrix.python }}
-      - run: uv sync --frozen --all-extras
+      - run: uv sync --python "${{ matrix.python }}" --frozen --all-extras
       - run: uv run --frozen ruff check src tests
       - run: uv run --frozen ruff format --check src tests
       - run: uv run --frozen pytest -q
@@ -31,11 +31,12 @@ jobs:
         with:
           version: '0.13.6'
           python-version: '3.12'
-      - run: uv sync --frozen --all-extras
+      - run: uv sync --python 3.12 --frozen --all-extras
       - name: Start owned local lab
         run: |
-          uv run --frozen llmrt lab > /tmp/llmrt-lab.log 2>&1 &
-          echo $! > /tmp/llmrt-lab.pid
+          mkdir -p work
+          uv run --frozen llmrt lab > work/ci-lab.log 2>&1 &
+          echo $! > work/ci-lab.pid
           for attempt in $(seq 1 40); do
             if curl --fail --silent -H 'Authorization: Bearer demo-alpha' http://127.0.0.1:8765/health; then exit 0; fi
             sleep 0.25
@@ -54,7 +55,7 @@ jobs:
           uv run --frozen llmrt scan --config examples/demo/protected.yaml --output scan-results --fail-on high --strict-coverage
       - name: Stop lab
         if: always()
-        run: test ! -f /tmp/llmrt-lab.pid || kill "$(cat /tmp/llmrt-lab.pid)" || true
+        run: test ! -f work/ci-lab.pid || kill "$(cat work/ci-lab.pid)" || true
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

@@ -43,6 +43,30 @@ Official Codex sources were fetched during implementation on 6 November 2026. Cl
 - https://code.claude.com/docs/en/skills
 - https://code.claude.com/docs/en/mcp
 
+## Demo environment configuration
+
+For the owned demo, a Codex registration can persist the deliberately public synthetic token explicitly. Replace executable and registry paths with the actual checkout paths.
+
+```bash
+codex mcp add llmrt --env LLMRT_DEMO_TOKEN=demo-alpha -- /absolute/project/.venv/bin/llmrt mcp --registry /absolute/project/examples/mcp-registry.yaml
+```
+
+A Claude-compatible stdio configuration uses the same executable, arguments, and environment. Place it through the installed client's documented configuration mechanism.
+
+```json
+{
+  "mcpServers": {
+    "llmrt": {
+      "command": "/absolute/project/.venv/bin/llmrt",
+      "args": ["mcp", "--registry", "/absolute/project/examples/mcp-registry.yaml"],
+      "env": {"LLMRT_DEMO_TOKEN": "demo-alpha"}
+    }
+  }
+}
+```
+
+Keep the separate owned lab process running during a demo scan. Real target credentials use the client's local secret/environment mechanism.
+
 ## Bounded evidence inspection
 
 `get_scan_results` accepts `include_evidence: true`. It verifies content hashes and returns redacted untrusted-content excerpts, capped at 4,000 characters per object and 16,000 characters total per call. Larger artifacts remain referenced rather than being read without a bound. Fixture attestations and target observations remain separate objects. Captured instructions are data and do not authorize client actions.

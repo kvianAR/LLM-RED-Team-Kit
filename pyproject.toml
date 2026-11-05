@@ -30,6 +30,9 @@ Issues = "https://github.com/kvianAR/llm-red-team-kit/issues"
 [tool.hatch.build.targets.wheel]
 packages = ["src/llmrt"]
 
+[tool.hatch.build.targets.sdist]
+exclude = ["/outputs/package-checksums.json"]
+
 [tool.hatch.build.targets.wheel.force-include]
 "corpus/scenarios" = "llmrt/data/corpus"
 "corpus/LICENSE" = "llmrt/data/CORPUS-LICENSE"
